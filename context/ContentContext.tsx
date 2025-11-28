@@ -9,13 +9,13 @@ import { getDatabase, ref, set, onValue } from 'firebase/database';
 // This ensures that all visitors connect to the same database.
 // ------------------------------------------------------------------
 const PERMANENT_FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  databaseURL: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyCzL-ygh7T-0pdLq-TL-VEBucGJ6bBu-UI",
+  authDomain: "yogapaartiban-web.firebaseapp.com",
+  databaseURL: "https://yogapaartiban-web-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "yogapaartiban-web",
+  storageBucket: "yogapaartiban-web.firebasestorage.app",
+  messagingSenderId: "853696584202",
+  appId: "1:853696584202:web:872ea5b3852e00d3d29df3"
 };
 
 interface ContentContextType {
