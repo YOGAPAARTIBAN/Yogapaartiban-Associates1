@@ -1,11 +1,22 @@
-<div align="center">
+# YOGAPAARTIBAN ASSOCIATES Website (v2.1)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+**Status: Ready for Fresh Deployment**
 
-  <h1>Built with AI Studio</h2>
+This is the complete, modern source code for the YOGAPAARTIBAN ASSOCIATES law firm website.
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## Quick Start
+1.  **Admin Login**: Navigate to `/official-login` (User: `ya_team`, Pass: `team_ay`).
+2.  **Dashboard**: Use the dashboard to edit content, upload images, and manage the website.
+3.  **Database**: Connect to Firebase via the Dashboard for realtime updates.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Git Error Troubleshooting
+If you see "failed to load file differences":
+1.  **Refresh the page**.
+2.  Disconnect any old repositories.
+3.  Select **Create New Repository**.
 
-</div>
+## Features
+-   **CMS**: Built-in content management.
+-   **Firebase Sync**: Realtime data synchronization.
+-   **Responsive**: Mobile-first design.
+-   **Legal Compliance**: Includes mandatory BCI disclaimer.
