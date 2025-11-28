@@ -15,6 +15,15 @@ export interface Service {
   videoUrl?: string; // URL for the service video
 }
 
+export interface Post {
+  id: string;
+  title: string;
+  date: string;
+  excerpt: string;
+  image?: string;
+  externalUrl?: string;
+}
+
 export interface SiteContent {
   general: {
     phone: string;
@@ -40,6 +49,7 @@ export interface SiteContent {
     associatesText: string;
   };
   services: Service[];
+  posts: Post[];
   disclaimer: {
     popupText: string;
     footerText: string;

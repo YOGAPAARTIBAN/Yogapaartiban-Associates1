@@ -119,6 +119,23 @@ export const INITIAL_CONTENT: SiteContent = {
       iconName: "Landmark",
     },
   ],
+  posts: [
+    {
+      id: "p1",
+      title: "Understanding GST Compliance for Startups",
+      date: "October 15, 2023",
+      excerpt: "Navigating the complexities of Goods and Services Tax can be daunting for new businesses. Here is a comprehensive guide to getting started with GST filings and compliance requirements.",
+      image: "https://images.unsplash.com/photo-1554224155-98406852d009?auto=format&fit=crop&q=80&w=800",
+      externalUrl: "#"
+    },
+    {
+      id: "p2",
+      title: "The Role of Cyber Forensics in Modern Litigation",
+      date: "September 22, 2023",
+      excerpt: "Digital evidence is becoming central to many legal battles. Learn how cyber forensics is reshaping the courtroom landscape and why digital trail matters in corporate disputes.",
+      image: "https://images.unsplash.com/photo-1563206767-5b1d972d9fb7?auto=format&fit=crop&q=80&w=800"
+    }
+  ],
   disclaimer: {
     popupText: "As per the rules of the Bar Council of India, law firms are not permitted to solicit work and advertise. By clicking the “Agree” button and accessing this website YOGAPAARTIBAN ASSOCIATES, the user fully accepts that you are seeking information of your own accord and volition and that no form of solicitation has taken place by the Firm or its members.\n\nThe information provided under this website is solely available at your request for information purposes only. It should not be interpreted as soliciting or advertisement. The firm is not liable for any consequence of any action taken by the user relying on material / information provided under this website. In cases where the user has any legal issues, he/she in all cases must seek independent legal advice.",
     footerText: "This website is for informational purposes only and complies with the rules of the Bar Council of India prohibiting solicitation and advertising. Nothing on this site should be construed as legal advice. Users must seek independent legal counsel for their specific issues.",

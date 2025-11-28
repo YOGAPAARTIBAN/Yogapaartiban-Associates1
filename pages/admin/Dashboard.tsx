@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock } from 'lucide-react';
+import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -12,6 +12,8 @@ const Dashboard: React.FC = () => {
   // Local state for form handling
   const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'database'>('general');
   const [firebaseConfigInput, setFirebaseConfigInput] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
   
   // Local copy to edit before saving
   const [editContent, setEditContent] = useState(content);
@@ -33,12 +35,58 @@ const Dashboard: React.FC = () => {
 
   const handleConnectFirebase = () => {
       try {
-          const config = JSON.parse(firebaseConfigInput);
-          connectToDatabase(config, 'local').then(success => {
-              if(success) alert("Connected to Database Successfully!");
+          let input = firebaseConfigInput.trim();
+          let configObject;
+
+          // 1. Try standard JSON parse first
+          try {
+             configObject = JSON.parse(input);
+          } catch (e) {
+             // 2. If JSON fails, try to parse as JavaScript Object (handling const x = { ... })
+             // Remove variable declarations like "const firebaseConfig =" or "var config ="
+             if (input.includes('=')) {
+                 input = input.split('=').slice(1).join('=').trim();
+             }
+             // Remove trailing semicolons
+             if (input.endsWith(';')) input = input.slice(0, -1);
+             
+             // Use Function constructor to safely evaluate the object string
+             // This handles unquoted keys and URLs correctly: { key: "value", url: "https://..." }
+             try {
+                 configObject = new Function('return ' + input)();
+             } catch (evalError) {
+                 throw new Error("Could not parse configuration object.");
+             }
+          }
+
+          // Validate keys
+          if (!configObject || !configObject.apiKey || !configObject.projectId) {
+              alert("Invalid Configuration. Missing apiKey or projectId.");
+              return;
+          }
+
+          connectToDatabase(configObject, 'local').then(success => {
+              if(success) {
+                  // Generate the code immediately for display
+                  const code = `// COPY THIS BLOCK INTO context/ContentContext.tsx
+// REPLACE the existing empty PERMANENT_FIREBASE_CONFIG variable.
+
+const PERMANENT_FIREBASE_CONFIG = {
+  apiKey: "${configObject.apiKey || ''}",
+  authDomain: "${configObject.authDomain || ''}",
+  databaseURL: "${configObject.databaseURL || ''}",
+  projectId: "${configObject.projectId || ''}",
+  storageBucket: "${configObject.storageBucket || ''}",
+  messagingSenderId: "${configObject.messagingSenderId || ''}",
+  appId: "${configObject.appId || ''}"
+};`;
+                  setGeneratedCode(code);
+                  alert("Connected to Database Successfully!");
+              }
           });
       } catch (e) {
-          alert("Invalid JSON format. Please paste the configuration object exactly as provided by Firebase.");
+          console.error(e);
+          alert("Could not parse the Configuration. Please ensure you are copying the full 'const firebaseConfig = { ... }' block.");
       }
   };
 
@@ -70,6 +118,33 @@ const Dashboard: React.FC = () => {
       reader.readAsDataURL(file);
     }
   };
+
+  // Helper to generate the deployment code snippet from storage (fallback)
+  const getDeploymentCode = () => {
+    if (generatedCode) return generatedCode; // Return immediate state if available
+    try {
+        const localConfig = localStorage.getItem('firebase_config');
+        if (!localConfig) return null;
+        const configObj = JSON.parse(localConfig);
+        
+        return `// COPY THIS BLOCK INTO context/ContentContext.tsx
+// REPLACE the existing empty PERMANENT_FIREBASE_CONFIG variable.
+
+const PERMANENT_FIREBASE_CONFIG = {
+  apiKey: "${configObj.apiKey || ''}",
+  authDomain: "${configObj.authDomain || ''}",
+  databaseURL: "${configObj.databaseURL || ''}",
+  projectId: "${configObj.projectId || ''}",
+  storageBucket: "${configObj.storageBucket || ''}",
+  messagingSenderId: "${configObj.messagingSenderId || ''}",
+  appId: "${configObj.appId || ''}"
+};`;
+    } catch (e) {
+        return null;
+    }
+  };
+
+  const deploymentCode = getDeploymentCode();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -820,26 +895,61 @@ const Dashboard: React.FC = () => {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="text-sm text-gray-700 bg-white p-4 rounded border border-gray-200">
-                                    <p className="font-bold mb-2">Instructions:</p>
-                                    <ol className="list-decimal list-inside space-y-1">
-                                        <li>Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Firebase Console</a> and create a project.</li>
-                                        <li>Create a <strong>Realtime Database</strong> in test mode.</li>
-                                        <li>Go to Project Settings -&gt; General -&gt; Your apps.</li>
-                                        <li>Select Web (&lt;/&gt;) and register the app.</li>
-                                        <li>Copy the <code>firebaseConfig</code> object.</li>
-                                        <li>Paste it below.</li>
-                                    </ol>
+                                {/* Instructions Toggle */}
+                                <div className="bg-white rounded border border-blue-200 overflow-hidden">
+                                  <button 
+                                    onClick={() => setShowGuide(!showGuide)}
+                                    className="w-full flex justify-between items-center p-3 bg-blue-100/50 hover:bg-blue-100 text-blue-800 font-bold text-sm transition-colors"
+                                  >
+                                    <span className="flex items-center gap-2"><HelpCircle size={16}/> How to get the Firebase JSON? (Step-by-Step)</span>
+                                    {showGuide ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+                                  </button>
+                                  
+                                  {showGuide && (
+                                    <div className="p-4 text-sm text-gray-700 space-y-3 bg-white">
+                                      <div className="flex gap-3">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">1</span>
+                                        <p>Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-bold">console.firebase.google.com</a> and login.</p>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">2</span>
+                                        <p>Click <strong>"Create a project"</strong>, name it, and follow the steps (you can skip Analytics).</p>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">3</span>
+                                        <div>
+                                          <p>Go to <strong>Build &rarr; Realtime Database</strong> on the left menu.</p>
+                                          <p>Click <strong>Create Database</strong> &rarr; Select location &rarr; Next.</p>
+                                          <p className="text-red-600 font-bold">IMPORTANT: Select "Start in test mode" and click Enable.</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">4</span>
+                                        <div>
+                                          <p>Click the <strong>Gear Icon ⚙️</strong> (Project Settings) at the top left.</p>
+                                          <p>Scroll down to "Your apps" and click the <strong>Web icon (&lt;/&gt;)</strong>.</p>
+                                          <p>Register the app (any name).</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-3">
+                                        <span className="bg-blue-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shrink-0 mt-0.5">5</span>
+                                        <div>
+                                          <p>Copy the code inside <code>const firebaseConfig = &#123; ... &#125;;</code></p>
+                                          <p>Paste it in the box below.</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 <label className="block">
-                                    <span className="text-gray-700 text-sm font-bold">Firebase Configuration JSON</span>
+                                    <span className="text-gray-700 text-sm font-bold">Paste Firebase Configuration Here</span>
                                     <textarea 
                                         rows={8}
                                         value={firebaseConfigInput}
                                         onChange={(e) => setFirebaseConfigInput(e.target.value)}
                                         className="mt-1 block w-full border border-gray-300 rounded p-3 font-mono text-xs"
-                                        placeholder='{ "apiKey": "...", "authDomain": "...", "databaseURL": "..." }'
+                                        placeholder='const firebaseConfig = { ... }'
                                     />
                                 </label>
                                 
@@ -853,7 +963,41 @@ const Dashboard: React.FC = () => {
                         )}
                     </div>
                     
+                    {/* DEPLOYMENT CODE GENERATOR - ALWAYS VISIBLE if not hardcoded */}
                     {connectionSource !== 'hardcoded' && (
+                        <div className="mt-8 bg-slate-800 text-slate-200 p-6 rounded border border-slate-700 shadow-xl">
+                            <h3 className="text-amber-400 font-bold text-lg mb-2 flex items-center gap-2">
+                                <Lock size={20} /> DEPLOYMENT CODE GENERATOR
+                            </h3>
+                            <p className="text-sm text-slate-400 mb-4">
+                                To make your database connection work for <strong>public visitors</strong> (Netlify/GitHub Pages), you must copy the code below and paste it into <code>context/ContentContext.tsx</code>.
+                            </p>
+                            
+                            {deploymentCode ? (
+                                <div className="relative group">
+                                    <pre className="bg-black p-4 rounded text-xs font-mono overflow-x-auto text-green-400 border border-slate-600">
+                                        {deploymentCode}
+                                    </pre>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(deploymentCode);
+                                            alert("Code copied to clipboard!");
+                                        }}
+                                        className="absolute top-2 right-2 bg-white text-black text-xs font-bold px-3 py-1 rounded hover:bg-gray-200 flex items-center gap-1"
+                                    >
+                                    <Copy size={12}/> Copy Code
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="bg-slate-700 p-4 rounded text-center text-sm text-slate-400 border border-slate-600">
+                                    <p>⚠️ No active configuration found.</p>
+                                    <p className="mt-1">Please paste your Firebase JSON in the "Connect to Firebase" section above and click Connect first.</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
+                    {connectionSource !== 'hardcoded' && !isFirebaseConnected && (
                         <div className="bg-yellow-50 p-4 rounded border border-yellow-200">
                             <h4 className="font-bold text-yellow-800 mb-2 flex items-center gap-2"><AlertTriangle size={16} /> Important Note</h4>
                             <p className="text-sm text-yellow-800">
