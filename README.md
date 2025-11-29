@@ -1,22 +1,19 @@
-# YOGAPAARTIBAN ASSOCIATES Website (v2.1)
+# YOGAPAARTIBAN ASSOCIATES Website (v2.2)
 
-**Status: Ready for Fresh Deployment**
+**Status: Production Ready**
 
-This is the complete, modern source code for the YOGAPAARTIBAN ASSOCIATES law firm website.
+This is the complete source code for the YOGAPAARTIBAN ASSOCIATES law firm website.
+
+## Deployment Status
+- **Database**: Permanently Connected (Hardcoded Configuration).
+- **Public Access**: Ready for Netlify/GitHub Pages.
 
 ## Quick Start
-1.  **Admin Login**: Navigate to `/official-login` (User: `ya_team`, Pass: `team_ay`).
-2.  **Dashboard**: Use the dashboard to edit content, upload images, and manage the website.
-3.  **Database**: Connect to Firebase via the Dashboard for realtime updates.
+1.  **Admin Login**: `/official-login` (User: `ya_team`, Pass: `team_ay`).
+2.  **Dashboard**: Manage content and view database status.
 
-## Git Error Troubleshooting
+## Troubleshooting Git
 If you see "failed to load file differences":
-1.  **Refresh the page**.
-2.  Disconnect any old repositories.
-3.  Select **Create New Repository**.
-
-## Features
--   **CMS**: Built-in content management.
--   **Firebase Sync**: Realtime data synchronization.
--   **Responsive**: Mobile-first design.
--   **Legal Compliance**: Includes mandatory BCI disclaimer.
+1.  Refresh the page.
+2.  Disconnect/Reconnect repository if needed.
+3.  Push again.
