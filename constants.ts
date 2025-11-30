@@ -142,6 +142,7 @@ export const INITIAL_CONTENT: SiteContent = {
   },
   credentials: {
     username: "ya_team",
-    password: "team_ay"
+    password: "team_ay",
+    recoveryCode: null
   }
 };

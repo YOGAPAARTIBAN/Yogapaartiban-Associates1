@@ -57,6 +57,7 @@ export interface SiteContent {
   credentials: {
     username: string;
     password: string;
+    recoveryCode?: string | null;
   };
 }
 
