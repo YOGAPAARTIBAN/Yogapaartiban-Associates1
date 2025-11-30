@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -10,10 +10,11 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   
   // Local state for form handling
-  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'database'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'database' | 'security'>('general');
   const [firebaseConfigInput, setFirebaseConfigInput] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   
   // Local copy to edit before saving
   const [editContent, setEditContent] = useState(content);
@@ -201,6 +202,12 @@ const PERMANENT_FIREBASE_CONFIG = {
                 className={`text-left px-4 py-3 rounded font-medium capitalize transition-colors flex items-center gap-2 ${activeTab === 'database' ? 'bg-amber-100 text-amber-900' : 'text-gray-600 hover:bg-slate-100'}`}
               >
                 <Database size={16} /> Database
+            </button>
+            <button
+                onClick={() => setActiveTab('security')}
+                className={`text-left px-4 py-3 rounded font-medium capitalize transition-colors flex items-center gap-2 ${activeTab === 'security' ? 'bg-red-50 text-red-900' : 'text-gray-600 hover:bg-slate-100'}`}
+              >
+                <ShieldCheck size={16} /> Security
             </button>
           </div>
 
@@ -1005,6 +1012,76 @@ const PERMANENT_FIREBASE_CONFIG = {
                             </p>
                         </div>
                     )}
+                </div>
+            )}
+            
+            {/* Security Tab */}
+            {activeTab === 'security' && (
+                <div className="space-y-6 max-w-xl">
+                    <h2 className="text-2xl font-bold mb-6 border-b pb-2">Security Settings</h2>
+                    
+                    <div className="bg-red-50 p-6 rounded border border-red-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <ShieldCheck className="text-red-600 w-8 h-8" />
+                            <div>
+                                <h3 className="text-lg font-bold text-slate-900">Admin Credentials</h3>
+                                <p className="text-sm text-gray-600">Update the login details for the official admin panel.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-6">
+                            <label className="block">
+                                <span className="text-gray-700 text-sm font-bold">New Username</span>
+                                <input 
+                                    type="text"
+                                    value={editContent.credentials?.username || ''}
+                                    onChange={(e) => {
+                                        setEditContent(prev => ({
+                                            ...prev,
+                                            credentials: {
+                                                ...prev.credentials,
+                                                username: e.target.value
+                                            }
+                                        }));
+                                    }}
+                                    className="mt-1 block w-full border border-gray-300 rounded p-3"
+                                    placeholder="Enter new username"
+                                />
+                            </label>
+
+                            <label className="block relative">
+                                <span className="text-gray-700 text-sm font-bold">New Password</span>
+                                <div className="relative mt-1">
+                                    <input 
+                                        type={showPassword ? "text" : "password"}
+                                        value={editContent.credentials?.password || ''}
+                                        onChange={(e) => {
+                                            setEditContent(prev => ({
+                                                ...prev,
+                                                credentials: {
+                                                    ...prev.credentials,
+                                                    password: e.target.value
+                                                }
+                                            }));
+                                        }}
+                                        className="block w-full border border-gray-300 rounded p-3 pr-10"
+                                        placeholder="Enter new password"
+                                    />
+                                    <button 
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+                            </label>
+                            
+                            <div className="bg-white p-3 rounded text-xs text-gray-500 border border-gray-200">
+                                <strong>Note:</strong> Changes will take effect immediately after saving. Please ensure you remember your new credentials.
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

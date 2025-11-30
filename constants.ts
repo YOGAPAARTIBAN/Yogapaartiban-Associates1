@@ -139,5 +139,9 @@ export const INITIAL_CONTENT: SiteContent = {
   disclaimer: {
     popupText: "As per the rules of the Bar Council of India, law firms are not permitted to solicit work and advertise. By clicking the “Agree” button and accessing this website YOGAPAARTIBAN ASSOCIATES, the user fully accepts that you are seeking information of your own accord and volition and that no form of solicitation has taken place by the Firm or its members.\n\nThe information provided under this website is solely available at your request for information purposes only. It should not be interpreted as soliciting or advertisement. The firm is not liable for any consequence of any action taken by the user relying on material / information provided under this website. In cases where the user has any legal issues, he/she in all cases must seek independent legal advice.",
     footerText: "This website is for informational purposes only and complies with the rules of the Bar Council of India prohibiting solicitation and advertising. Nothing on this site should be construed as legal advice. Users must seek independent legal counsel for their specific issues.",
+  },
+  credentials: {
+    username: "ya_team",
+    password: "team_ay"
   }
 };

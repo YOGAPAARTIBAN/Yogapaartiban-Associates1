@@ -54,6 +54,10 @@ export interface SiteContent {
     popupText: string;
     footerText: string;
   };
+  credentials: {
+    username: string;
+    password: string;
+  };
 }
 
 export interface AuthState {

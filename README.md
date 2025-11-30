@@ -1,15 +1,15 @@
-# YOGAPAARTIBAN ASSOCIATES Website (v2.2)
+# YOGAPAARTIBAN ASSOCIATES Website (v2.3)
 
 **Status: Production Ready**
 
 This is the complete source code for the YOGAPAARTIBAN ASSOCIATES law firm website.
 
 ## Deployment Status
-- **Database**: Permanently Connected (Hardcoded Configuration).
+- **Database**: Permanently Connected.
 - **Public Access**: Ready for Netlify/GitHub Pages.
 
 ## Quick Start
-1.  **Admin Login**: `/official-login` (User: `ya_team`, Pass: `team_ay`).
+1.  **Admin Login**: `/official-login` (Use credentials set in Dashboard/Security).
 2.  **Dashboard**: Manage content and view database status.
 
 ## Troubleshooting Git
