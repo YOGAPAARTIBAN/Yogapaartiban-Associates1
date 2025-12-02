@@ -59,6 +59,25 @@ const Home: React.FC = () => {
         </div>
       </section>
 
+      {/* ANNOUNCEMENT BAR */}
+      {content.home.announcement?.enabled && (
+        <section className="bg-slate-900 border-b-4 border-amber-500 py-3 overflow-hidden">
+          <div className="whitespace-nowrap animate-marquee-left flex items-center w-full">
+            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
+            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
+            
+            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
+            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
+            
+            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
+            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
+            
+            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
+            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
+          </div>
+        </section>
+      )}
+
       {/* Highlights */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">

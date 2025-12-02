@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp, ShieldCheck, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp, ShieldCheck, Eye, EyeOff, MapPin, BellRing } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -358,7 +358,7 @@ const PERMANENT_FIREBASE_CONFIG = {
                        }}
                        className="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
                      />
-                     <span className="font-bold text-gray-800">Enable Scrolling Marquee</span>
+                     <span className="font-bold text-gray-800">Enable Maintenance Overlay</span>
                    </label>
                    
                    <label className="block">
@@ -381,8 +381,59 @@ const PERMANENT_FIREBASE_CONFIG = {
                        }}
                        className="mt-1 block w-full border border-gray-300 rounded p-2"
                      />
+                   </label>
+                 </div>
+               </div>
+
+               {/* ANNOUNCEMENT MARQUEE CONTROLS (NEW) */}
+               <div className="bg-indigo-50 p-4 rounded border border-indigo-200 mb-6">
+                 <h3 className="font-bold text-indigo-800 mb-4 flex items-center gap-2">
+                   <BellRing size={18}/> Announcement Marquee
+                 </h3>
+                 <div className="grid gap-4">
+                   <label className="flex items-center gap-3 p-3 bg-white rounded border border-indigo-100 cursor-pointer hover:bg-indigo-50 transition-colors">
+                     <input 
+                       type="checkbox"
+                       checked={editContent.home.announcement?.enabled ?? false}
+                       onChange={(e) => {
+                         setEditContent(prev => ({
+                           ...prev,
+                           home: {
+                             ...prev.home,
+                             announcement: {
+                               enabled: e.target.checked,
+                               text: prev.home.announcement?.text || ''
+                             }
+                           }
+                         }));
+                       }}
+                       className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500"
+                     />
+                     <span className="font-bold text-gray-800">Enable Announcement Bar</span>
+                   </label>
+                   
+                   <label className="block">
+                     <span className="text-gray-700 text-sm font-bold">Announcement Text</span>
+                     <input 
+                       type="text"
+                       placeholder="e.g. We have opened a new branch..."
+                       value={editContent.home.announcement?.text || ''}
+                       onChange={(e) => {
+                          setEditContent(prev => ({
+                            ...prev,
+                            home: {
+                              ...prev.home,
+                              announcement: {
+                                enabled: prev.home.announcement?.enabled || false,
+                                text: e.target.value
+                              }
+                            }
+                          }));
+                       }}
+                       className="mt-1 block w-full border border-gray-300 rounded p-2"
+                     />
                      <p className="text-xs text-gray-500 mt-1">
-                       Preview: "THE WEBSITE IS UNDER MAINTENANCE TILL {editContent.home.maintenance.date}"
+                       Displays below the hero section with a blinking "NEW" badge.
                      </p>
                    </label>
                  </div>

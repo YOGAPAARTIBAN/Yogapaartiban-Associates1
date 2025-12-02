@@ -17,6 +17,10 @@ export const INITIAL_CONTENT: SiteContent = {
     maintenance: {
       enabled: false,
       date: "31/12/2024"
+    },
+    announcement: {
+      enabled: true,
+      text: "We have opened a new branch in Dubai to serve our international clients better."
     }
   },
   about: {

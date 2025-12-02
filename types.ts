@@ -41,6 +41,10 @@ export interface SiteContent {
       enabled: boolean;
       date: string;
     };
+    announcement: {
+      enabled: boolean;
+      text: string;
+    };
   };
   about: {
     founder: TeamMember;
