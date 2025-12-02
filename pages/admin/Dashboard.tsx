@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Save, Plus, Trash2, LogOut, User, Upload, Image as ImageIcon, Users, Video, RotateCcw, CheckCircle, X, AlertTriangle, Database, Cloud, Lock, Copy, HelpCircle, ChevronDown, ChevronUp, ShieldCheck, Eye, EyeOff, MapPin } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -10,7 +10,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   
   // Local state for form handling
-  const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'database' | 'security'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'contact' | 'home' | 'about' | 'services' | 'database' | 'security'>('general');
   const [firebaseConfigInput, setFirebaseConfigInput] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string | null>(null);
@@ -187,7 +187,7 @@ const PERMANENT_FIREBASE_CONFIG = {
           
           {/* Sidebar */}
           <div className="w-full md:w-64 bg-slate-50 border-r border-gray-200 p-4 flex flex-col gap-2">
-            {(['general', 'home', 'about', 'services'] as const).map(tab => (
+            {(['general', 'contact', 'home', 'about', 'services'] as const).map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -220,9 +220,9 @@ const PERMANENT_FIREBASE_CONFIG = {
                 <h2 className="text-2xl font-bold mb-6 border-b pb-2">General Settings</h2>
                 <div className="grid gap-6">
                   
-                  {/* Contact Info Group */}
+                  {/* Basic Branding */}
                   <div className="bg-slate-50 p-4 rounded border border-gray-200">
-                    <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><User size={16}/> Basic Info</h3>
+                    <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><User size={16}/> Branding & Site Info</h3>
                     <div className="grid gap-4">
                       <label className="block">
                         <span className="text-gray-700 text-sm font-bold">Website Tagline</span>
@@ -233,26 +233,23 @@ const PERMANENT_FIREBASE_CONFIG = {
                           className="mt-1 block w-full border border-gray-300 rounded p-2"
                         />
                       </label>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <label className="block">
-                          <span className="text-gray-700 text-sm font-bold">Phone Number</span>
+                      <label className="block">
+                        <span className="text-gray-700 text-sm font-bold">Accent Color (Hex)</span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <input 
+                            type="color" 
+                            value={editContent.general.accentColor}
+                            onChange={e => updateNested('general', 'accentColor', e.target.value)}
+                            className="h-10 w-10 p-0 border-0 rounded overflow-hidden"
+                          />
                           <input 
                             type="text" 
-                            value={editContent.general.phone}
-                            onChange={e => updateNested('general', 'phone', e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded p-2"
+                            value={editContent.general.accentColor}
+                            onChange={e => updateNested('general', 'accentColor', e.target.value)}
+                            className="block w-full border border-gray-300 rounded p-2"
                           />
-                        </label>
-                        <label className="block">
-                          <span className="text-gray-700 text-sm font-bold">Email Address</span>
-                          <input 
-                            type="text" 
-                            value={editContent.general.email}
-                            onChange={e => updateNested('general', 'email', e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded p-2"
-                          />
-                        </label>
-                      </div>
+                        </div>
+                      </label>
                     </div>
                   </div>
                   
@@ -287,26 +284,49 @@ const PERMANENT_FIREBASE_CONFIG = {
                       </div>
                     )}
                   </div>
-
-                  <label className="block">
-                    <span className="text-gray-700 text-sm font-bold">Accent Color (Hex)</span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <input 
-                        type="color" 
-                        value={editContent.general.accentColor}
-                        onChange={e => updateNested('general', 'accentColor', e.target.value)}
-                        className="h-10 w-10 p-0 border-0 rounded overflow-hidden"
-                      />
-                      <input 
-                        type="text" 
-                        value={editContent.general.accentColor}
-                        onChange={e => updateNested('general', 'accentColor', e.target.value)}
-                        className="block w-full border border-gray-300 rounded p-2"
-                      />
-                    </div>
-                  </label>
                 </div>
               </div>
+            )}
+
+            {/* Contact Settings Tab */}
+            {activeTab === 'contact' && (
+                <div className="space-y-6 max-w-2xl">
+                    <h2 className="text-2xl font-bold mb-6 border-b pb-2">Contact Page Settings</h2>
+                    <div className="bg-slate-50 p-6 rounded border border-gray-200">
+                         <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2"><MapPin size={16}/> Contact Information</h3>
+                         <div className="grid gap-6">
+                            <label className="block">
+                                <span className="text-gray-700 text-sm font-bold">Phone Number</span>
+                                <input 
+                                    type="text" 
+                                    value={editContent.general.phone}
+                                    onChange={e => updateNested('general', 'phone', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                                />
+                            </label>
+                            <label className="block">
+                                <span className="text-gray-700 text-sm font-bold">Email Address</span>
+                                <input 
+                                    type="text" 
+                                    value={editContent.general.email}
+                                    onChange={e => updateNested('general', 'email', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                                />
+                            </label>
+                            <label className="block">
+                                <span className="text-gray-700 text-sm font-bold">Office Addresses</span>
+                                <textarea 
+                                    rows={4}
+                                    value={editContent.general.address}
+                                    onChange={e => updateNested('general', 'address', e.target.value)}
+                                    className="mt-1 block w-full border border-gray-300 rounded p-2"
+                                    placeholder="List your office locations..."
+                                />
+                                <p className="text-xs text-gray-500 mt-1">This text appears on the Contact page and Footer.</p>
+                            </label>
+                         </div>
+                    </div>
+                </div>
             )}
 
             {/* Home Tab */}

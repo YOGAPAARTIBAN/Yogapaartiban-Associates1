@@ -5,6 +5,7 @@ import { MapPin, Mail, Send } from 'lucide-react';
 const Contact: React.FC = () => {
   const { content } = useContent();
   const [formStatus, setFormStatus] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [subject, setSubject] = useState('General Inquiry');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -110,6 +111,38 @@ const Contact: React.FC = () => {
                     placeholder="John Doe" 
                   />
                 </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Country</label>
+                        <select required name="country" className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition-colors">
+                            <option value="">Select Country</option>
+                            <option value="India">India</option>
+                            <option value="United States">United States</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Australia">Australia</option>
+                            <option value="United Arab Emirates">UAE</option>
+                            <option value="Singapore">Singapore</option>
+                            <option value="Malaysia">Malaysia</option>
+                            <option value="Germany">Germany</option>
+                            <option value="Russia">Russia</option>
+                            <option value="Cyprus">Cyprus</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">State / Province</label>
+                        <input 
+                            required 
+                            name="state"
+                            type="text" 
+                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition-colors" 
+                            placeholder="State or Province" 
+                        />
+                    </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Email Address</label>
                   <input 
@@ -120,15 +153,43 @@ const Contact: React.FC = () => {
                     placeholder="john@example.com" 
                   />
                 </div>
+                
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Subject</label>
-                  <select name="subject" className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition-colors">
+                  <select 
+                    name="subject" 
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-gray-50 focus:bg-white transition-colors"
+                  >
                     <option value="General Inquiry">General Inquiry</option>
-                    <option value="Legal Consultation">Legal Consultation</option>
-                    <option value="Corporate Services">Corporate Services</option>
+                    <option value="Immigration Services">Immigration Services</option>
+                    <option value="Real Estate Services">Real Estate Services</option>
+                    <option value="Finance Services">Finance Services</option>
+                    <option value="Fintech Services">Fintech Services</option>
+                    <option value="Medical/Healthcare Services">Medical/Healthcare Services</option>
+                    <option value="Export/Import Services">Export/Import Services</option>
+                    <option value="IPR">IPR (Intellectual Property)</option>
+                    <option value="Business/Corporate services">Business/Corporate services</option>
+                    <option value="Taxation services">Taxation services</option>
+                    <option value="Start-up Services">Start-up Services</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
+
+                {subject === 'Other' && (
+                    <div className="animate-fade-in-down">
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Please specify subject</label>
+                        <input 
+                            required 
+                            name="subject_other_details"
+                            type="text" 
+                            className="w-full p-3 border border-amber-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50 focus:bg-white transition-colors" 
+                            placeholder="Type the subject here..." 
+                        />
+                    </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Message</label>
                   <textarea 
