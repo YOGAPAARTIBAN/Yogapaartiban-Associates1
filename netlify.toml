@@ -1,6 +1,5 @@
 [[plugins]]
 package = "@netlify/plugin-sitemap"
 
-# This part is optional and only needed to customize behavior
 [plugins.inputs]
-buildDir = "build"
+buildDir = "dist"
