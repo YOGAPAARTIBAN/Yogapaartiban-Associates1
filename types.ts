@@ -37,6 +37,7 @@ export interface SiteContent {
     heroTitle: string;
     heroSubtitle: string;
     introText: string;
+    internationalVideoUrl?: string; // New field for the video section
     maintenance: {
       enabled: boolean;
       date: string;

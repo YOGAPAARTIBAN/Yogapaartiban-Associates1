@@ -385,7 +385,7 @@ const PERMANENT_FIREBASE_CONFIG = {
                  </div>
                </div>
 
-               {/* ANNOUNCEMENT MARQUEE CONTROLS (NEW) */}
+               {/* ANNOUNCEMENT MARQUEE CONTROLS */}
                <div className="bg-indigo-50 p-4 rounded border border-indigo-200 mb-6">
                  <h3 className="font-bold text-indigo-800 mb-4 flex items-center gap-2">
                    <BellRing size={18}/> Announcement Marquee
@@ -466,6 +466,20 @@ const PERMANENT_FIREBASE_CONFIG = {
                      onChange={e => updateNested('home', 'introText', e.target.value)}
                      className="mt-1 block w-full border border-gray-300 rounded p-2"
                    />
+                 </label>
+                 
+                 <label className="block">
+                    <span className="text-gray-700 text-sm font-bold flex items-center gap-2"><Video size={14}/> International Section Video URL</span>
+                    <input
+                        type="text"
+                        value={editContent.home.internationalVideoUrl || ''}
+                        onChange={e => updateNested('home', 'internationalVideoUrl', e.target.value)}
+                        className="mt-1 block w-full border border-gray-300 rounded p-2"
+                        placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                       Enter a YouTube URL for the "Yogapaartiban Associates Internationally" section.
+                    </p>
                  </label>
                </div>
              </div>

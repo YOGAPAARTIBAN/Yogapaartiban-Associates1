@@ -14,6 +14,7 @@ export const INITIAL_CONTENT: SiteContent = {
     heroTitle: "YOGAPAARTIBAN ASSOCIATES",
     heroSubtitle: "Excellence in Legal Counsel & Corporate Compliance",
     introText: "We provide comprehensive legal solutions with a focus on commercial integrity, technological advancement, and global compliance.",
+    internationalVideoUrl: "https://www.youtube.com/watch?v=LXb3EKWsInQ", // Default video (placeholder or generic nature/tech)
     maintenance: {
       enabled: false,
       date: "31/12/2024"

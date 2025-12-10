@@ -35,12 +35,23 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [connectionSource, setConnectionSource] = useState<'hardcoded' | 'local' | 'none'>('none');
   const [db, setDb] = useState<any>(null);
 
-  // Initialize state from localStorage if available to persist changes locally first
+  // Initialize state from localStorage with DEEP MERGE to preserve new structural keys
   const [content, setContent] = useState<SiteContent>(() => {
     try {
       const savedContent = localStorage.getItem('site_content_v1');
       if (savedContent) {
-        return { ...INITIAL_CONTENT, ...JSON.parse(savedContent) };
+        const parsed = JSON.parse(savedContent);
+        // Deep merge top-level objects to ensure new fields (like home.announcement) in INITIAL_CONTENT 
+        // are not overwritten by old legacy data that lacks them.
+        return { 
+            ...INITIAL_CONTENT, 
+            ...parsed,
+            general: { ...INITIAL_CONTENT.general, ...parsed.general },
+            home: { ...INITIAL_CONTENT.home, ...parsed.home },
+            about: { ...INITIAL_CONTENT.about, ...parsed.about },
+            disclaimer: { ...INITIAL_CONTENT.disclaimer, ...parsed.disclaimer },
+            credentials: { ...INITIAL_CONTENT.credentials, ...parsed.credentials }
+        };
       }
     } catch (error) {
       console.error("Failed to load content from storage", error);
@@ -98,12 +109,26 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       onValue(contentRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
-          // Merge incoming cloud data with current structure
-          setContent((prev) => ({ ...prev, ...data }));
-          // Also update local storage to keep them in sync
-          try {
-            localStorage.setItem('site_content_v1', JSON.stringify({ ...content, ...data }));
-          } catch(e) {}
+          // Merge incoming cloud data with current structure (Deep Merge)
+          setContent((prev) => {
+             const merged = { 
+                 ...prev, 
+                 ...data,
+                 // Ensure nested objects preserve structure from local state if cloud state is older/missing keys
+                 general: { ...prev.general, ...data.general },
+                 home: { ...prev.home, ...data.home },
+                 about: { ...prev.about, ...data.about },
+                 disclaimer: { ...prev.disclaimer, ...data.disclaimer },
+                 credentials: { ...prev.credentials, ...data.credentials }
+             };
+             
+             // Update Local Storage to keep sync
+             try {
+                localStorage.setItem('site_content_v1', JSON.stringify(merged));
+             } catch(e) {}
+             
+             return merged;
+          });
         }
       });
 

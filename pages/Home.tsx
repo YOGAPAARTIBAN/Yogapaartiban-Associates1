@@ -1,10 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useContent } from '../context/ContentContext';
-import { ArrowRight, Scale, Shield, Globe } from 'lucide-react';
+import { ArrowRight, Scale, Shield, Globe, Play, X, Bell } from 'lucide-react';
 
 const Home: React.FC = () => {
   const { content } = useContent();
+  const [isInternationalVideoOpen, setIsInternationalVideoOpen] = useState(false);
+
+  // Helper to extract video ID and create embed URL for YouTube
+  const getEmbedUrl = (url: string | undefined) => {
+    if (!url) return '';
+    let videoId = '';
+    
+    try {
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1].split('?')[0];
+        } else if (url.includes('youtube.com/watch')) {
+            const urlParams = new URLSearchParams(new URL(url).search);
+            videoId = urlParams.get('v') || '';
+        } else if (url.includes('youtube.com/embed/')) {
+            return url;
+        }
+    } catch (e) {
+        console.error("Error parsing video URL", e);
+        return url;
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}?autoplay=1` : url;
+  };
+
+  // Check if announcement is enabled (safe check)
+  const isAnnouncementEnabled = content.home.announcement?.enabled;
+  const announcementText = content.home.announcement?.text || '';
 
   return (
     <div>
@@ -60,20 +87,42 @@ const Home: React.FC = () => {
       </section>
 
       {/* ANNOUNCEMENT BAR */}
-      {content.home.announcement?.enabled && (
-        <section className="bg-slate-900 border-b-4 border-amber-500 py-3 overflow-hidden">
+      {isAnnouncementEnabled && (
+        <section className="bg-slate-900 border-b-4 border-amber-500 py-4 overflow-hidden relative z-20 shadow-xl">
           <div className="whitespace-nowrap animate-marquee-left flex items-center w-full">
-            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
-            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
-            
-            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
-            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
-            
-            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
-            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
-            
-            <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400">NEW</span>
-            <span className="text-white font-medium tracking-wide mr-16 text-sm uppercase">{content.home.announcement.text}</span>
+            {[1, 2, 3, 4].map((item) => (
+               <div key={item} className="flex items-center shrink-0">
+                  <span className="bg-red-600 text-white text-xs font-bold px-2 py-1 rounded animate-pulse mr-4 shadow-lg border border-red-400 flex items-center gap-1">
+                    <Bell size={10} fill="currentColor"/> NEW
+                  </span>
+                  <span className="text-white font-medium tracking-wide mr-24 text-sm uppercase">
+                    {announcementText}
+                  </span>
+               </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* International Section */}
+      {content.home.internationalVideoUrl && (
+        <section className="bg-slate-900 py-20 relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+          
+          <div className="container mx-auto px-4 text-center relative z-10">
+            <h2 className="text-3xl md:text-5xl font-serif font-bold text-white mb-10">
+              Yogapaartiban Associates Internationally
+            </h2>
+
+            <button
+              onClick={() => setIsInternationalVideoOpen(true)}
+              className="group relative inline-flex items-center justify-center w-24 h-24 bg-amber-500 rounded-full hover:bg-amber-400 transition-all duration-300 shadow-[0_0_25px_rgba(245,158,11,0.5)] hover:shadow-[0_0_40px_rgba(245,158,11,0.8)] hover:scale-110"
+            >
+               <Play className="w-10 h-10 text-white fill-current ml-1" />
+               {/* Ripple effect rings */}
+               <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping"></span>
+            </button>
+            <p className="text-amber-500/80 mt-8 text-sm uppercase tracking-[0.2em] font-bold">Watch Our Global Presence</p>
           </div>
         </section>
       )}
@@ -139,6 +188,27 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Video Modal */}
+      {isInternationalVideoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-sm">
+            <button
+                onClick={() => setIsInternationalVideoOpen(false)}
+                className="absolute top-6 right-6 text-white hover:text-red-500 transition-colors z-50 p-2"
+            >
+                <X size={40}/>
+            </button>
+            <div className="w-full max-w-5xl aspect-video bg-black rounded-lg overflow-hidden shadow-2xl border border-gray-800 relative">
+                <iframe
+                src={getEmbedUrl(content.home.internationalVideoUrl)}
+                title="International Video"
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                ></iframe>
+            </div>
+        </div>
+      )}
     </div>
   );
 };
