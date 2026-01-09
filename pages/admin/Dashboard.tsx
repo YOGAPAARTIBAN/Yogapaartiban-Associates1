@@ -1,11 +1,10 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, RefreshCw, CheckCircle2, Home as HomeIcon, Info, Briefcase, Settings } from 'lucide-react';
+import { Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, RefreshCw, CheckCircle2, Home as HomeIcon, Info, Briefcase, Settings, AlertTriangle } from 'lucide-react';
 import { set, get } from 'firebase/database';
-import { INITIAL_ADMIN_CREDENTIALS } from '../../constants';
+import { INITIAL_ADMIN_CREDENTIALS, INITIAL_CONTENT } from '../../constants';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -14,14 +13,31 @@ const Dashboard: React.FC = () => {
   
   const [activeTab, setActiveTab] = useState<'general' | 'home' | 'about' | 'services' | 'security'>('general');
   const [showPassword, setShowPassword] = useState(false);
-  const [editContent, setEditContent] = useState(content);
+  const [editContent, setEditContent] = useState(content || INITIAL_CONTENT);
   const [adminCreds, setAdminCreds] = useState(INITIAL_ADMIN_CREDENTIALS);
   const [masterLock, setMasterLock] = useState('SomeRandomWord123');
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success'>('idle');
 
-  // Sync editContent with global content when it loads
+  // Helper to ensure services is always an array for the UI
+  const safeServices = useMemo(() => {
+    const s = editContent.services;
+    if (Array.isArray(s)) return s;
+    if (s && typeof s === 'object') return Object.values(s);
+    return [];
+  }, [editContent.services]);
+
+  // Sync editContent with global content when it loads or changes
   useEffect(() => {
-    setEditContent(content);
+    if (content) {
+      setEditContent(prev => ({
+        ...INITIAL_CONTENT,
+        ...content,
+        general: { ...INITIAL_CONTENT.general, ...(content.general || {}) },
+        home: { ...INITIAL_CONTENT.home, ...(content.home || {}) },
+        about: { ...INITIAL_CONTENT.about, ...(content.about || {}) },
+        disclaimer: { ...INITIAL_CONTENT.disclaimer, ...(content.disclaimer || {}) }
+      }));
+    }
   }, [content]);
 
   useEffect(() => {
@@ -39,14 +55,21 @@ const Dashboard: React.FC = () => {
             });
         }
     }
-  }, [isFirebaseConnected]);
+  }, [isFirebaseConnected, getDbRef]);
 
   if (!isAuthenticated) { navigate('/official-login'); return null; }
 
   const handleSave = async () => {
     setSavingStatus('saving');
     try {
-        updateContent(editContent);
+        // Ensure we send back an array for services if that's what we want to maintain
+        const dataToSave = {
+            ...editContent,
+            services: safeServices
+        };
+        
+        await updateContent(dataToSave);
+        
         if (isFirebaseConnected) {
             const adminRef = getDbRef('admin_credentials');
             const lockRef = getDbRef('master_lock');
@@ -72,10 +95,13 @@ const Dashboard: React.FC = () => {
   };
 
   const updateService = (id: string, field: string, value: string) => {
-    setEditContent(prev => ({
-      ...prev,
-      services: prev.services.map(s => s.id === id ? { ...s, [field]: value } : s)
-    }));
+    setEditContent(prev => {
+        const servicesArray = Array.isArray(prev.services) ? prev.services : Object.values(prev.services || {});
+        return {
+            ...prev,
+            services: servicesArray.map(s => s.id === id ? { ...s, [field]: value } : s)
+        };
+    });
   };
 
   return (
@@ -127,60 +153,67 @@ const Dashboard: React.FC = () => {
 
         {/* Content Area */}
         <div className="flex-1 bg-white rounded-2xl shadow-md border border-slate-200 p-8">
-            {activeTab === 'general' && (
+            {!content && isFirebaseConnected && (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
+                    <RefreshCw className="animate-spin" size={40} />
+                    <p className="font-medium">Fetching cloud data...</p>
+                </div>
+            )}
+
+            {activeTab === 'general' && editContent.general && (
                 <div className="space-y-6 animate-fade-in-up">
                     <h2 className="text-2xl font-serif font-bold border-b pb-4">Firm Identity</h2>
                     <div className="grid gap-6">
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Tagline</span>
-                            <input type="text" value={editContent.general.tagline} onChange={e => updateNested('general', 'tagline', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-amber-500"/>
+                            <input type="text" value={editContent.general.tagline || ''} onChange={e => updateNested('general', 'tagline', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-amber-500"/>
                         </label>
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Brand Color (HEX)</span>
                             <div className="flex gap-3">
-                                <input type="text" value={editContent.general.accentColor} onChange={e => updateNested('general', 'accentColor', e.target.value)} className="w-32 border border-slate-200 rounded-lg p-3 font-mono uppercase"/>
-                                <div className="w-12 h-12 rounded-lg border shadow-inner" style={{backgroundColor: editContent.general.accentColor}}></div>
+                                <input type="text" value={editContent.general.accentColor || '#C5A059'} onChange={e => updateNested('general', 'accentColor', e.target.value)} className="w-32 border border-slate-200 rounded-lg p-3 font-mono uppercase"/>
+                                <div className="w-12 h-12 rounded-lg border shadow-inner" style={{backgroundColor: editContent.general.accentColor || '#C5A059'}}></div>
                             </div>
                         </label>
                     </div>
                 </div>
             )}
 
-            {activeTab === 'home' && (
+            {activeTab === 'home' && editContent.home && (
                 <div className="space-y-6 animate-fade-in-up">
                     <h2 className="text-2xl font-serif font-bold border-b pb-4">Home Hero Section</h2>
                     <div className="grid gap-6">
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Main Title</span>
-                            <input type="text" value={editContent.home.heroTitle} onChange={e => updateNested('home', 'heroTitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3"/>
+                            <input type="text" value={editContent.home.heroTitle || ''} onChange={e => updateNested('home', 'heroTitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3"/>
                         </label>
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Hero Subtitle</span>
-                            <textarea value={editContent.home.heroSubtitle} onChange={e => updateNested('home', 'heroSubtitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-24"/>
+                            <textarea value={editContent.home.heroSubtitle || ''} onChange={e => updateNested('home', 'heroSubtitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-24"/>
                         </label>
                         <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
                             <h3 className="font-bold text-amber-900 mb-4">Firm Announcement Bar</h3>
                             <div className="flex items-center gap-4 mb-4">
                                 <span className="text-sm font-medium">Enabled:</span>
-                                <input type="checkbox" checked={editContent.home.announcement?.enabled} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, enabled: e.target.checked })} className="w-5 h-5 accent-amber-600 cursor-pointer"/>
+                                <input type="checkbox" checked={!!editContent.home.announcement?.enabled} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, enabled: e.target.checked })} className="w-5 h-5 accent-amber-600 cursor-pointer"/>
                             </div>
-                            <input type="text" placeholder="Announcement text..." value={editContent.home.announcement?.text} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, text: e.target.value })} className="w-full border border-amber-200 rounded-lg p-3 bg-white"/>
+                            <input type="text" placeholder="Announcement text..." value={editContent.home.announcement?.text || ''} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, text: e.target.value })} className="w-full border border-amber-200 rounded-lg p-3 bg-white"/>
                         </div>
                     </div>
                 </div>
             )}
 
-            {activeTab === 'about' && (
+            {activeTab === 'about' && editContent.about?.founder && (
                 <div className="space-y-6 animate-fade-in-up">
                     <h2 className="text-2xl font-serif font-bold border-b pb-4">About the Founder</h2>
                     <div className="grid gap-6">
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Qualifications</span>
-                            <input type="text" value={editContent.about.founder.qualifications} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, qualifications: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3"/>
+                            <input type="text" value={editContent.about.founder.qualifications || ''} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, qualifications: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3"/>
                         </label>
                         <label className="block">
                             <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Founder's Detailed Bio</span>
-                            <textarea value={editContent.about.founder.bio} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-64 text-sm leading-relaxed"/>
+                            <textarea value={editContent.about.founder.bio || ''} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-64 text-sm leading-relaxed"/>
                         </label>
                     </div>
                 </div>
@@ -189,18 +222,25 @@ const Dashboard: React.FC = () => {
             {activeTab === 'services' && (
                 <div className="space-y-6 animate-fade-in-up">
                     <h2 className="text-2xl font-serif font-bold border-b pb-4">Practice Areas</h2>
-                    <div className="grid gap-6">
-                        {editContent.services.map((service) => (
-                            <div key={service.id} className="p-4 border border-slate-100 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
-                                <div className="flex gap-4">
-                                    <div className="flex-1 space-y-3">
-                                        <input type="text" value={service.title} onChange={e => updateService(service.id, 'title', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-1 focus:border-amber-500 outline-none"/>
-                                        <textarea value={service.description} onChange={e => updateService(service.id, 'description', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-20 outline-none"/>
+                    {safeServices.length === 0 ? (
+                        <div className="p-8 border-2 border-dashed border-slate-200 rounded-xl text-center text-slate-400">
+                            <AlertTriangle className="mx-auto mb-2 opacity-50" />
+                            <p>No services found in database.</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-6">
+                            {safeServices.map((service) => (
+                                <div key={service.id || Math.random()} className="p-4 border border-slate-100 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                    <div className="flex gap-4">
+                                        <div className="flex-1 space-y-3">
+                                            <input type="text" value={service.title || ''} onChange={e => updateService(service.id, 'title', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-1 focus:border-amber-500 outline-none"/>
+                                            <textarea value={service.description || ''} onChange={e => updateService(service.id, 'description', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-20 outline-none"/>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -211,19 +251,19 @@ const Dashboard: React.FC = () => {
                         <div className="bg-amber-600 p-8 rounded-2xl text-white shadow-xl">
                             <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Key size={20}/> Database Secret</h3>
                             <p className="text-amber-100 text-xs mb-4">Must match Firebase Rules (SomeRandomWord123)</p>
-                            <input type="text" value={masterLock} onChange={e => setMasterLock(e.target.value)} className="w-full border-2 border-white/20 bg-white/10 rounded-xl p-4 text-white font-mono outline-none focus:bg-white/20"/>
+                            <input type="text" value={masterLock || ''} onChange={e => setMasterLock(e.target.value)} className="w-full border-2 border-white/20 bg-white/10 rounded-xl p-4 text-white font-mono outline-none focus:bg-white/20"/>
                         </div>
                         <div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-100">
                             <h3 className="font-bold text-slate-800 mb-6">Login Credentials</h3>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <label className="block">
                                     <span className="text-slate-400 text-[10px] font-black uppercase mb-2 block">Username</span>
-                                    <input type="text" value={adminCreds.username} onChange={e => setAdminCreds(prev => ({...prev, username: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white"/>
+                                    <input type="text" value={adminCreds.username || ''} onChange={e => setAdminCreds(prev => ({...prev, username: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white"/>
                                 </label>
                                 <label className="block">
                                     <span className="text-slate-400 text-[10px] font-black uppercase mb-2 block">Password</span>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} value={adminCreds.password} onChange={e => setAdminCreds(prev => ({...prev, password: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white pr-12"/>
+                                        <input type={showPassword ? "text" : "password"} value={adminCreds.password || ''} onChange={e => setAdminCreds(prev => ({...prev, password: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white pr-12"/>
                                         <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-4 text-slate-400">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                                     </div>
                                 </label>
