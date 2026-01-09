@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
@@ -22,10 +22,13 @@ const Dashboard: React.FC = () => {
   const [adminCreds, setAdminCreds] = useState(INITIAL_ADMIN_CREDENTIALS);
   const [masterLock, setMasterLock] = useState('SomeRandomWord123');
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success'>('idle');
+  
+  // Track if user has modified anything to prevent overwriting local state with cloud data until saved
+  const [isDirty, setIsDirty] = useState(false);
 
-  // Initialization & Sync
+  // Sync edit state with global content on mount or when content changes (only if not dirty)
   useEffect(() => {
-    if (content) {
+    if (content && !isDirty) {
       setEditContent({
         ...INITIAL_CONTENT,
         ...content,
@@ -47,7 +50,7 @@ const Dashboard: React.FC = () => {
         disclaimer: { ...INITIAL_CONTENT.disclaimer, ...(content.disclaimer || {}) }
       });
     }
-  }, [content]);
+  }, [content, isDirty]);
 
   useEffect(() => {
     if (isFirebaseConnected) {
@@ -75,6 +78,7 @@ const Dashboard: React.FC = () => {
             }
         }
         setSavingStatus('success');
+        setIsDirty(false); // Reset dirty flag after successful save
         setTimeout(() => setSavingStatus('idle'), 3000);
     } catch (e: any) {
         console.error("Critical Save Error:", e);
@@ -84,6 +88,7 @@ const Dashboard: React.FC = () => {
   };
 
   const updateNested = (section: string, key: string, value: any) => {
+    setIsDirty(true);
     setEditContent(prev => ({
       ...prev,
       [section]: { ...(prev[section as keyof typeof prev] as any), [key]: value }
@@ -91,6 +96,7 @@ const Dashboard: React.FC = () => {
   };
 
   const updateFounderField = (field: string, value: any) => {
+    setIsDirty(true);
     setEditContent(prev => ({
       ...prev,
       about: {
@@ -104,6 +110,7 @@ const Dashboard: React.FC = () => {
   };
 
   const updateArrayItem = (path: 'services' | 'about.executives' | 'about.cas', id: string, field: string, value: any) => {
+    setIsDirty(true);
     setEditContent(prev => {
       const newState = { ...prev };
       if (path === 'services') {
@@ -118,6 +125,7 @@ const Dashboard: React.FC = () => {
   };
 
   const addItem = (path: 'services' | 'executives' | 'cas') => {
+    setIsDirty(true);
     const id = Date.now().toString();
     setEditContent(prev => {
       if (path === 'services') return { ...prev, services: [...prev.services, { id, title: 'New Service', description: '', iconName: 'Briefcase' }] };
@@ -127,6 +135,7 @@ const Dashboard: React.FC = () => {
   };
 
   const removeItem = (path: 'services' | 'executives' | 'cas', id: string) => {
+    setIsDirty(true);
     setEditContent(prev => {
       if (path === 'services') return { ...prev, services: prev.services.filter(s => s.id !== id) };
       if (path === 'executives') return { ...prev, about: { ...prev.about, executives: prev.about.executives.filter(e => e.id !== id) } };
@@ -143,6 +152,7 @@ const Dashboard: React.FC = () => {
            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${isFirebaseConnected ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
               {isFirebaseConnected ? <><Wifi size={12}/> Active Cloud Sync</> : <><WifiOff size={12}/> Offline Mode</>}
            </div>
+           {isDirty && <span className="text-[10px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">Unsaved Changes</span>}
         </div>
         <div className="flex items-center gap-3">
           <button onClick={handleSave} disabled={savingStatus === 'saving'} className={`${savingStatus === 'success' ? 'bg-green-600' : 'bg-amber-500 hover:bg-amber-600'} px-6 py-2.5 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg min-w-[160px] justify-center`}>
@@ -241,16 +251,17 @@ const Dashboard: React.FC = () => {
                                         <><ImageIcon className="text-slate-300 mb-2" size={32}/><span className="text-[10px] text-slate-400 font-bold uppercase">No Profile Photo</span></>
                                     )}
                                 </div>
-                                <label className="block">
-                                    <span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Profile Picture URL</span>
+                                <div className="space-y-1">
+                                    <span className="text-slate-400 text-[10px] font-black uppercase block">Profile Picture URL</span>
                                     <input 
                                         type="text" 
                                         placeholder="Paste image link here" 
                                         value={editContent.about.founder.image || ''} 
                                         onChange={e => updateFounderField('image', e.target.value)} 
-                                        className="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono"
+                                        className="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono focus:ring-1 focus:ring-amber-500 outline-none"
                                     />
-                                </label>
+                                    <p className="text-[9px] text-slate-400 italic">Example: https://images.unsplash.com/...</p>
+                                </div>
                             </div>
                             <div className="md:col-span-2 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
