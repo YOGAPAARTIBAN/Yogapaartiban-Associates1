@@ -1,4 +1,10 @@
-import { SiteContent } from './types';
+import { SiteContent, AdminCredentials } from './types';
+
+export const INITIAL_ADMIN_CREDENTIALS: AdminCredentials = {
+  username: "ya_team",
+  password: "team_ay",
+  recoveryCode: null
+};
 
 export const INITIAL_CONTENT: SiteContent = {
   general: {
@@ -6,7 +12,6 @@ export const INITIAL_CONTENT: SiteContent = {
     email: "support@yogapaartibanassociates.com",
     address: "Chennai | Madurai | Hyderabad | Bangalore | Delhi | Cochin | Navi Mumbai",
     tagline: "Legal Mastery Meets Technical Insight",
-    // Updated to a premium conference room image
     heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1920",
     accentColor: "#C5A059", // Gold/Bronze
   },
@@ -14,7 +19,7 @@ export const INITIAL_CONTENT: SiteContent = {
     heroTitle: "YOGAPAARTIBAN ASSOCIATES",
     heroSubtitle: "Excellence in Legal Counsel & Corporate Compliance",
     introText: "We provide comprehensive legal solutions with a focus on commercial integrity, technological advancement, and global compliance.",
-    internationalVideoUrl: "https://www.youtube.com/watch?v=LXb3EKWsInQ", // Default video (placeholder or generic nature/tech)
+    internationalVideoUrl: "https://www.youtube.com/watch?v=LXb3EKWsInQ",
     maintenance: {
       enabled: false,
       date: "31/12/2024"
@@ -31,7 +36,6 @@ export const INITIAL_CONTENT: SiteContent = {
       role: "Founder & Owner",
       qualifications: "B.E., M.S./M.Tech., Ph.D, B.L., ACCA",
       bio: "Yogapaartiban brings a unique and powerful combination of deep technical understanding and established legal mastery to his practice. He has also completed numerous certifications/diplomas in networking, psychology, forensic accounting, medical compliance, and hospital compliance. With over 10 years of standing experience as a counsel, he has successfully argued cases across various high courts, district courts, the Supreme Court, and specialized tribunals such as DRT, Labour Courts, Commercial Courts, TNPID, and RERA. His expertise includes startup registration, GST compliance, cyber forensics, labour law, and hospital compliance. Before his legal career, he worked in multiple software companies, notably as a Project Manager (Network Specialist) and briefly as a CFO, giving him deep commercial and technological insight beneficial to his clients.",
-      // Updated to a professional male portrait
       image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400",
     },
     executives: [
@@ -79,7 +83,6 @@ export const INITIAL_CONTENT: SiteContent = {
       title: "GST Services",
       description: "Comprehensive Goods and Services Tax solutions including registration, filing returns, compliance audits, and representation in litigations. We ensure your business adheres to the latest tax regulations.",
       iconName: "Calculator",
-      videoUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" // Sample video
     },
     {
       id: "srv2",
@@ -144,10 +147,5 @@ export const INITIAL_CONTENT: SiteContent = {
   disclaimer: {
     popupText: "As per the rules of the Bar Council of India, law firms are not permitted to solicit work and advertise. By clicking the “Agree” button and accessing this website YOGAPAARTIBAN ASSOCIATES, the user fully accepts that you are seeking information of your own accord and volition and that no form of solicitation has taken place by the Firm or its members.\n\nThe information provided under this website is solely available at your request for information purposes only. It should not be interpreted as soliciting or advertisement. The firm is not liable for any consequence of any action taken by the user relying on material / information provided under this website. In cases where the user has any legal issues, he/she in all cases must seek independent legal advice.",
     footerText: "This website is for informational purposes only and complies with the rules of the Bar Council of India prohibiting solicitation and advertising. Nothing on this site should be construed as legal advice. Users must seek independent legal counsel for their specific issues.",
-  },
-  credentials: {
-    username: "ya_team",
-    password: "team_ay",
-    recoveryCode: null
   }
 };

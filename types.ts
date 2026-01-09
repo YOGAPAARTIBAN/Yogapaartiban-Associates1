@@ -24,6 +24,12 @@ export interface Post {
   externalUrl?: string;
 }
 
+export interface AdminCredentials {
+  username: string;
+  password: string;
+  recoveryCode?: string | null;
+}
+
 export interface SiteContent {
   general: {
     phone: string;
@@ -37,7 +43,7 @@ export interface SiteContent {
     heroTitle: string;
     heroSubtitle: string;
     introText: string;
-    internationalVideoUrl?: string; // New field for the video section
+    internationalVideoUrl?: string;
     maintenance: {
       enabled: boolean;
       date: string;
@@ -58,11 +64,6 @@ export interface SiteContent {
   disclaimer: {
     popupText: string;
     footerText: string;
-  };
-  credentials: {
-    username: string;
-    password: string;
-    recoveryCode?: string | null;
   };
 }
 
