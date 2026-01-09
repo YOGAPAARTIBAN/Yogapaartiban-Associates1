@@ -6,7 +6,7 @@ import {
   Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, 
   RefreshCw, CheckCircle2, Home as HomeIcon, Info, Briefcase, 
   Settings, AlertTriangle, User, Users, Plus, Trash2, 
-  Video, Phone, Mail, MapPin, Image as ImageIcon, AlertCircle
+  Video, Phone, Mail, MapPin, Image as ImageIcon, AlertCircle, Bell
 } from 'lucide-react';
 import { set, get } from 'firebase/database';
 import { INITIAL_ADMIN_CREDENTIALS, INITIAL_CONTENT } from '../../constants';
@@ -174,19 +174,32 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-6">
-                        <div className="bg-red-50 rounded-2xl border border-red-100 p-6">
+                        <div className="bg-red-50 rounded-2xl border border-red-100 p-6 h-fit">
                             <h3 className="flex items-center gap-2 text-red-800 font-bold mb-4 uppercase text-xs tracking-widest"><AlertCircle size={16}/> Maintenance / Outage</h3>
                             <div className="flex items-center gap-3 mb-4">
-                                <input type="checkbox" checked={!!editContent.home.maintenance?.enabled} onChange={e => updateNested('home', 'maintenance', { ...editContent.home.maintenance, enabled: e.target.checked })} className="w-5 h-5 accent-red-600"/>
-                                <span className="text-sm font-bold text-red-900">Enable Maintenance Warning</span>
+                                <input type="checkbox" id="maint_enabled" checked={!!editContent.home.maintenance?.enabled} onChange={e => updateNested('home', 'maintenance', { ...editContent.home.maintenance, enabled: e.target.checked })} className="w-5 h-5 accent-red-600"/>
+                                <label htmlFor="maint_enabled" className="text-sm font-bold text-red-900 cursor-pointer">Enable Maintenance Warning</label>
                             </div>
                             <input type="text" placeholder="Maintenance Date (e.g. 31/12/2024)" value={editContent.home.maintenance?.date || ''} onChange={e => updateNested('home', 'maintenance', { ...editContent.home.maintenance, date: e.target.value })} className="w-full border border-red-200 rounded-lg p-3 bg-white"/>
                         </div>
-                        <div className="bg-amber-50 rounded-2xl border border-amber-100 p-6">
+                        <div className="bg-amber-50 rounded-2xl border border-amber-100 p-6 h-fit">
                             <h3 className="flex items-center gap-2 text-amber-800 font-bold mb-4 uppercase text-xs tracking-widest"><Video size={16}/> Global Video</h3>
                             <span className="text-xs text-amber-700/60 block mb-2">Full YouTube or Vimeo URL</span>
                             <input type="text" value={editContent.home.internationalVideoUrl || ''} onChange={e => updateNested('home', 'internationalVideoUrl', e.target.value)} className="w-full border border-amber-200 rounded-lg p-3 bg-white mb-2"/>
                             <div className="text-[10px] text-amber-600 italic">Example: https://www.youtube.com/watch?v=LXb3EKWsInQ</div>
+                        </div>
+                        <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 h-fit md:col-span-2">
+                            <h3 className="flex items-center gap-2 text-amber-400 font-bold mb-4 uppercase text-xs tracking-widest"><Bell size={16}/> Announcement Bar (Marquee)</h3>
+                            <div className="flex items-center gap-3 mb-4">
+                                <input type="checkbox" id="ann_enabled" checked={!!editContent.home.announcement?.enabled} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, enabled: e.target.checked })} className="w-5 h-5 accent-amber-500"/>
+                                <label htmlFor="ann_enabled" className="text-sm font-bold text-slate-300 cursor-pointer">Enable Scrolling Announcement</label>
+                            </div>
+                            <textarea 
+                              placeholder="Type announcement message here..." 
+                              value={editContent.home.announcement?.text || ''} 
+                              onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, text: e.target.value })} 
+                              className="w-full border border-slate-700 rounded-lg p-3 bg-slate-800 text-white h-20 outline-none focus:ring-1 focus:ring-amber-500"
+                            />
                         </div>
                     </div>
                 </div>
