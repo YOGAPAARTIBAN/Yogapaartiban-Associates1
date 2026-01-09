@@ -64,30 +64,26 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
         const data = snapshot.val();
         if (data) {
           setContent((prev) => {
-             // CRITICAL: Deep merge to ensure founder image is not lost
+             // Use cloud data as primary, falling back to INITIAL_CONTENT for structure
              const merged = { 
                  ...INITIAL_CONTENT,
-                 ...prev, 
                  ...data,
-                 general: { ...INITIAL_CONTENT.general, ...(prev.general || {}), ...(data.general || {}) },
+                 general: { ...INITIAL_CONTENT.general, ...(data.general || {}) },
                  home: { 
                    ...INITIAL_CONTENT.home, 
-                   ...(prev.home || {}), 
                    ...(data.home || {}),
-                   announcement: { ...INITIAL_CONTENT.home.announcement, ...(prev.home?.announcement || {}), ...(data.home?.announcement || {}) },
-                   maintenance: { ...INITIAL_CONTENT.home.maintenance, ...(prev.home?.maintenance || {}), ...(data.home?.maintenance || {}) }
+                   announcement: { ...INITIAL_CONTENT.home.announcement, ...(data.home?.announcement || {}) },
+                   maintenance: { ...INITIAL_CONTENT.home.maintenance, ...(data.home?.maintenance || {}) }
                  },
                  about: { 
                    ...INITIAL_CONTENT.about, 
-                   ...(prev.about || {}), 
                    ...(data.about || {}),
                    founder: { 
                      ...INITIAL_CONTENT.about.founder, 
-                     ...(prev.about?.founder || {}), 
                      ...(data.about?.founder || {}) 
                    }
                  },
-                 disclaimer: { ...INITIAL_CONTENT.disclaimer, ...(prev.disclaimer || {}), ...(data.disclaimer || {}) }
+                 disclaimer: { ...INITIAL_CONTENT.disclaimer, ...(data.disclaimer || {}) }
              };
              try { localStorage.setItem('site_content_v1', JSON.stringify(merged)); } catch(e) {}
              return merged;

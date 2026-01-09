@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,13 +23,12 @@ const Dashboard: React.FC = () => {
   const [masterLock, setMasterLock] = useState('SomeRandomWord123');
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success'>('idle');
   
-  // Track if user has modified anything to prevent overwriting local state with cloud data until saved
   const [isDirty, setIsDirty] = useState(false);
 
-  // Sync edit state with global content on mount or when content changes (only if not dirty)
+  // Deep clone and sync local state with global context content
   useEffect(() => {
     if (content && !isDirty) {
-      setEditContent({
+      setEditContent(JSON.parse(JSON.stringify({
         ...INITIAL_CONTENT,
         ...content,
         general: { ...INITIAL_CONTENT.general, ...(content.general || {}) },
@@ -48,7 +47,7 @@ const Dashboard: React.FC = () => {
         },
         services: Array.isArray(content.services) ? content.services : Object.values(content.services || {}),
         disclaimer: { ...INITIAL_CONTENT.disclaimer, ...(content.disclaimer || {}) }
-      });
+      })));
     }
   }, [content, isDirty]);
 
@@ -74,15 +73,17 @@ const Dashboard: React.FC = () => {
                 if (lockRef) await set(lockRef, masterLock);
                 if (adminRef) await set(adminRef, adminCreds);
             } catch (securityErr) {
-                console.warn("Security sync restricted by database permissions.", securityErr);
+                console.warn("Security sync restricted.", securityErr);
             }
         }
         setSavingStatus('success');
-        setIsDirty(false); // Reset dirty flag after successful save
-        setTimeout(() => setSavingStatus('idle'), 3000);
+        setTimeout(() => {
+          setIsDirty(false);
+          setSavingStatus('idle');
+        }, 2000);
     } catch (e: any) {
-        console.error("Critical Save Error:", e);
-        alert(`Save Failed: ${e.message || 'Check connection.'}`);
+        console.error("Save Error:", e);
+        alert(`Save Failed: ${e.message}`);
         setSavingStatus('idle');
     }
   };
@@ -112,7 +113,7 @@ const Dashboard: React.FC = () => {
   const updateArrayItem = (path: 'services' | 'about.executives' | 'about.cas', id: string, field: string, value: any) => {
     setIsDirty(true);
     setEditContent(prev => {
-      const newState = { ...prev };
+      const newState = JSON.parse(JSON.stringify(prev));
       if (path === 'services') {
         newState.services = prev.services.map(s => s.id === id ? { ...s, [field]: value } : s);
       } else if (path === 'about.executives') {
@@ -129,7 +130,7 @@ const Dashboard: React.FC = () => {
     const id = Date.now().toString();
     setEditContent(prev => {
       if (path === 'services') return { ...prev, services: [...prev.services, { id, title: 'New Service', description: '', iconName: 'Briefcase' }] };
-      if (path === 'executives') return { ...prev, about: { ...prev.about, executives: [...prev.about.executives, { id, name: 'New Executive', role: 'Advocate', bio: '' }] } };
+      if (path === 'executives') return { ...prev, about: { ...prev.about, executives: [...prev.about.executives, { id, name: 'New Executive', role: 'Advocate', bio: '', image: '' }] } };
       return { ...prev, about: { ...prev.about, cas: [...prev.about.cas, { id, name: 'New CA', role: 'Chartered Accountant', bio: '' }] } };
     });
   };
@@ -216,7 +217,6 @@ const Dashboard: React.FC = () => {
                             <h3 className="flex items-center gap-2 text-amber-800 font-bold mb-4 uppercase text-xs tracking-widest"><Video size={16}/> Global Video</h3>
                             <span className="text-xs text-amber-700/60 block mb-2">Full YouTube or Vimeo URL</span>
                             <input type="text" value={editContent.home.internationalVideoUrl || ''} onChange={e => updateNested('home', 'internationalVideoUrl', e.target.value)} className="w-full border border-amber-200 rounded-lg p-3 bg-white mb-2"/>
-                            <div className="text-[10px] text-amber-600 italic">Example: https://www.youtube.com/watch?v=LXb3EKWsInQ</div>
                         </div>
                         <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 h-fit md:col-span-2">
                             <h3 className="flex items-center gap-2 text-amber-400 font-bold mb-4 uppercase text-xs tracking-widest"><Bell size={16}/> Announcement Bar (Marquee)</h3>
@@ -238,21 +238,22 @@ const Dashboard: React.FC = () => {
             {/* TAB: ABOUT / TEAM */}
             {activeTab === 'about' && (
                 <div className="space-y-8 animate-fade-in-up">
+                    {/* Founder Profile */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
-                            <div className="flex items-center gap-3"><User /> <h2 className="font-serif font-bold text-xl">Founder Profile</h2></div>
+                            <div className="flex items-center gap-3"><User /> <h2 className="font-serif font-bold text-xl">Founder Profile Picture & Bio</h2></div>
                         </div>
                         <div className="p-8 grid md:grid-cols-3 gap-8">
                             <div className="space-y-4">
                                 <div className="aspect-[3/4] rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
                                     {editContent.about.founder.image ? (
-                                        <img src={editContent.about.founder.image} className="w-full h-full object-cover rounded-lg" alt="Preview"/>
+                                        <img src={editContent.about.founder.image} className="w-full h-full object-cover rounded-lg" alt="Founder Preview"/>
                                     ) : (
                                         <><ImageIcon className="text-slate-300 mb-2" size={32}/><span className="text-[10px] text-slate-400 font-bold uppercase">No Profile Photo</span></>
                                     )}
                                 </div>
                                 <div className="space-y-1">
-                                    <span className="text-slate-400 text-[10px] font-black uppercase block">Profile Picture URL</span>
+                                    <span className="text-slate-400 text-[10px] font-black uppercase block">Founder Image URL</span>
                                     <input 
                                         type="text" 
                                         placeholder="Paste image link here" 
@@ -260,7 +261,7 @@ const Dashboard: React.FC = () => {
                                         onChange={e => updateFounderField('image', e.target.value)} 
                                         className="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono focus:ring-1 focus:ring-amber-500 outline-none"
                                     />
-                                    <p className="text-[9px] text-slate-400 italic">Example: https://images.unsplash.com/...</p>
+                                    <p className="text-[9px] text-slate-400 italic">Required for "About" section display.</p>
                                 </div>
                             </div>
                             <div className="md:col-span-2 space-y-4">
@@ -268,34 +269,46 @@ const Dashboard: React.FC = () => {
                                     <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Full Name</span><input type="text" value={editContent.about.founder.name || ''} onChange={e => updateFounderField('name', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 font-bold"/></label>
                                     <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Qualifications</span><input type="text" value={editContent.about.founder.qualifications || ''} onChange={e => updateFounderField('qualifications', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3"/></label>
                                 </div>
-                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Detailed Bio</span><textarea value={editContent.about.founder.bio || ''} onChange={e => updateFounderField('bio', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
+                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Founder Bio</span><textarea value={editContent.about.founder.bio || ''} onChange={e => updateFounderField('bio', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
                             </div>
                         </div>
                     </div>
 
+                    {/* Executive Advocates */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                            <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Advocates</h2></div>
+                            <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Executive Advocates</h2></div>
                             <button onClick={() => addItem('executives')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add Advocate</button>
                         </div>
-                        <div className="p-8 space-y-6">
+                        <div className="p-8 space-y-8">
                             {editContent.about.executives.map((exec) => (
                                 <div key={exec.id} className="p-6 border border-slate-100 rounded-2xl bg-slate-50/50 relative group">
                                     <button onClick={() => removeItem('executives', exec.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
-                                    <div className="grid md:grid-cols-2 gap-4 mb-4">
-                                        <input type="text" placeholder="Name" value={exec.name || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'name', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-2 outline-none focus:border-amber-500"/>
-                                        <input type="text" placeholder="Role / Title" value={exec.role || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'role', e.target.value)} className="w-full border-b border-slate-200 bg-transparent py-2 outline-none focus:border-amber-500"/>
+                                    <div className="grid md:grid-cols-4 gap-6">
+                                        <div className="space-y-2">
+                                           <div className="aspect-[3/4] bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
+                                               {exec.image ? <img src={exec.image} className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-200"/>}
+                                           </div>
+                                           <input type="text" placeholder="Photo URL" value={exec.image || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'image', e.target.value)} className="w-full text-[10px] border border-slate-200 rounded p-1.5 bg-white"/>
+                                        </div>
+                                        <div className="md:col-span-3 space-y-4">
+                                            <div className="grid md:grid-cols-2 gap-4">
+                                                <input type="text" placeholder="Advocate Name" value={exec.name || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'name', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-2 outline-none focus:border-amber-500"/>
+                                                <input type="text" placeholder="Qualifications" value={exec.role || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'role', e.target.value)} className="w-full border-b border-slate-200 bg-transparent py-2 outline-none focus:border-amber-500"/>
+                                            </div>
+                                            <textarea placeholder="Bio description..." value={exec.bio || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'bio', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-20 outline-none resize-none"/>
+                                        </div>
                                     </div>
-                                    <textarea placeholder="Bio description..." value={exec.bio || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'bio', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-16 outline-none resize-none"/>
                                 </div>
                             ))}
                         </div>
                     </div>
 
+                    {/* CAs */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                             <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Chartered Accountants</h2></div>
-                            <button onClick={() => addItem('cas')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add CA</button>
+                            <button onClick={() => addItem('cas')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add Auditor</button>
                         </div>
                         <div className="p-8 grid md:grid-cols-2 gap-6">
                             {editContent.about.cas.map((ca) => (
