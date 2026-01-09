@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
-import { Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, RefreshCw, CheckCircle2, Home as HomeIcon, Info, Briefcase, Settings } from 'lucide-react';
 import { set, get } from 'firebase/database';
 import { INITIAL_ADMIN_CREDENTIALS } from '../../constants';
 
@@ -18,21 +19,19 @@ const Dashboard: React.FC = () => {
   const [masterLock, setMasterLock] = useState('SomeRandomWord123');
   const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'success'>('idle');
 
+  // Sync editContent with global content when it loads
+  useEffect(() => {
+    setEditContent(content);
+  }, [content]);
+
   useEffect(() => {
     if (isFirebaseConnected) {
-        // Fetch Admin Credentials
         const adminRef = getDbRef('admin_credentials');
         if (adminRef) {
             get(adminRef).then(snap => {
                 if (snap.exists()) setAdminCreds(snap.val());
-                else {
-                    // Fallback to reading from content node if that's where they were
-                    const legacy = (content as any).credentials;
-                    if (legacy) setAdminCreds(legacy);
-                }
             });
         }
-        // Fetch Master Lock
         const lockRef = getDbRef('master_lock');
         if (lockRef) {
             get(lockRef).then(snap => {
@@ -47,30 +46,36 @@ const Dashboard: React.FC = () => {
   const handleSave = async () => {
     setSavingStatus('saving');
     try {
-        // 1. Update Content
         updateContent(editContent);
-        
-        // 2. Sync Security Nodes
         if (isFirebaseConnected) {
             const adminRef = getDbRef('admin_credentials');
             const lockRef = getDbRef('master_lock');
-            
-            // We must write the lock first to satisfy the write rules
             if (lockRef) await set(lockRef, masterLock);
             if (adminRef) await set(adminRef, adminCreds);
         }
-        
         setSavingStatus('success');
         setTimeout(() => setSavingStatus('idle'), 3000);
     } catch (e) {
-        alert('Save Failed! Check if your "Master Lock" matches your Firebase Rules.');
-        console.error(e);
+        alert('Save Failed! Check connection.');
         setSavingStatus('idle');
     }
   };
 
-  const updateNested = (section: keyof typeof content, key: string, value: string) => {
-    setEditContent(prev => ({ ...prev, [section]: { ...(prev[section] as any), [section === 'services' ? '' : key]: value } }));
+  const updateNested = (section: string, key: string, value: any) => {
+    setEditContent(prev => ({
+      ...prev,
+      [section]: {
+        ...(prev[section as keyof typeof prev] as any),
+        [key]: value
+      }
+    }));
+  };
+
+  const updateService = (id: string, field: string, value: string) => {
+    setEditContent(prev => ({
+      ...prev,
+      services: prev.services.map(s => s.id === id ? { ...s, [field]: value } : s)
+    }));
   };
 
   return (
@@ -78,9 +83,9 @@ const Dashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-xl sticky top-0 z-50">
         <div className="flex items-center gap-4">
-           <h1 className="font-serif font-bold text-xl tracking-tight">Admin Dashboard</h1>
-           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${isFirebaseConnected ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
-              {isFirebaseConnected ? <><Wifi size={12}/> Live Sync Active</> : <><WifiOff size={12}/> Local Mode Only</>}
+           <h1 className="font-serif font-bold text-xl tracking-tight">Management Console</h1>
+           <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${isFirebaseConnected ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'}`}>
+              {isFirebaseConnected ? <><Wifi size={12}/> Active Cloud Sync</> : <><WifiOff size={12}/> Offline Mode</>}
            </div>
         </div>
         
@@ -88,118 +93,145 @@ const Dashboard: React.FC = () => {
           <button 
             onClick={handleSave} 
             disabled={savingStatus === 'saving'}
-            className={`${savingStatus === 'success' ? 'bg-green-600' : 'bg-amber-500 hover:bg-amber-600'} px-6 py-2.5 rounded-lg flex items-center gap-2 font-bold transition-all transform active:scale-95 shadow-lg disabled:opacity-50 min-w-[160px] justify-center`}
+            className={`${savingStatus === 'success' ? 'bg-green-600' : 'bg-amber-500 hover:bg-amber-600'} px-6 py-2.5 rounded-lg flex items-center gap-2 font-bold transition-all shadow-lg disabled:opacity-50 min-w-[160px] justify-center`}
           >
             {savingStatus === 'saving' ? <RefreshCw size={18} className="animate-spin" /> : savingStatus === 'success' ? <CheckCircle2 size={18} /> : <Save size={18} />}
-            {savingStatus === 'saving' ? 'Syncing...' : savingStatus === 'success' ? 'All Saved!' : 'Save Changes'}
+            {savingStatus === 'saving' ? 'Saving...' : savingStatus === 'success' ? 'Changes Saved' : 'Save All'}
           </button>
-          <button onClick={() => { logout(); navigate('/official-login'); }} className="bg-white/10 hover:bg-red-600/20 text-white/70 hover:text-red-400 px-4 py-2.5 rounded-lg flex items-center gap-2 font-medium transition-all border border-white/10">
-            <LogOut size={18} /> Logout
+          <button onClick={() => { logout(); navigate('/official-login'); }} className="bg-white/10 hover:bg-red-600/40 px-4 py-2.5 rounded-lg text-white/80 hover:text-white transition-all">
+            <LogOut size={18} />
           </button>
         </div>
       </div>
 
-      <div className="flex-grow container mx-auto p-4 md:p-8">
-        <div className="bg-white rounded-2xl shadow-2xl min-h-[75vh] flex flex-col md:flex-row overflow-hidden border border-slate-200">
-          {/* Sidebar */}
-          <div className="w-full md:w-72 bg-slate-50 border-r border-slate-200 p-8 flex flex-col gap-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Management Console</p>
-            {(['general', 'home', 'about', 'services', 'security'] as const).map(tab => (
-              <button 
-                key={tab} 
-                onClick={() => setActiveTab(tab)} 
-                className={`text-left px-5 py-4 rounded-xl font-bold capitalize transition-all flex items-center justify-between group ${activeTab === tab ? 'bg-slate-900 text-white shadow-xl translate-x-2' : 'text-slate-500 hover:bg-slate-200/50'}`}
-              >
-                {tab}
-                {activeTab === tab && <div className="w-1.5 h-1.5 rounded-full bg-amber-400"></div>}
-              </button>
-            ))}
-            
-            <div className="mt-auto pt-8 border-t border-slate-200">
-                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
-                    <p className="text-[10px] text-amber-800 font-bold uppercase mb-1">Database Info</p>
-                    <p className="text-[9px] text-amber-600 font-mono break-all opacity-70">yogapaartiban-web-default-rtdb</p>
-                </div>
-            </div>
-          </div>
+      <div className="flex-grow container mx-auto p-4 md:p-8 flex flex-col md:flex-row gap-6">
+        {/* Sidebar Nav */}
+        <div className="w-full md:w-64 bg-white rounded-2xl shadow-md border border-slate-200 p-4 flex flex-col gap-2 h-fit md:sticky md:top-24">
+            <button onClick={() => setActiveTab('general')} className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'general' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
+                <Settings size={18}/> General
+            </button>
+            <button onClick={() => setActiveTab('home')} className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'home' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
+                <HomeIcon size={18}/> Home Page
+            </button>
+            <button onClick={() => setActiveTab('about')} className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'about' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
+                <Info size={18}/> About Us
+            </button>
+            <button onClick={() => setActiveTab('services')} className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'services' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-500 hover:bg-slate-100'}`}>
+                <Briefcase size={18}/> Services
+            </button>
+            <div className="my-2 border-t border-slate-100"></div>
+            <button onClick={() => setActiveTab('security')} className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'security' ? 'bg-red-600 text-white shadow-lg' : 'text-red-500 hover:bg-red-50'}`}>
+                <ShieldCheck size={18}/> Security
+            </button>
+        </div>
 
-          {/* Editor Area */}
-          <div className="flex-1 p-10 overflow-y-auto max-h-[80vh] scrollbar-hide">
+        {/* Content Area */}
+        <div className="flex-1 bg-white rounded-2xl shadow-md border border-slate-200 p-8">
             {activeTab === 'general' && (
-              <div className="space-y-10 animate-fade-in-up">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                    <h2 className="text-3xl font-serif font-bold text-slate-900">General Identity</h2>
-                </div>
-                
-                <div className="grid gap-8 max-w-3xl">
-                    <div className="group">
-                        <label className="block text-slate-500 text-xs font-black uppercase tracking-widest mb-3 group-focus-within:text-amber-600 transition-colors">Firm Slogan / Tagline</label>
-                        <input type="text" value={editContent.general.tagline} onChange={e => updateNested('general', 'tagline', e.target.value)} className="w-full border-2 border-slate-100 rounded-xl p-4 focus:border-amber-500 outline-none transition-all text-slate-800 font-medium shadow-sm"/>
+                <div className="space-y-6 animate-fade-in-up">
+                    <h2 className="text-2xl font-serif font-bold border-b pb-4">Firm Identity</h2>
+                    <div className="grid gap-6">
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Tagline</span>
+                            <input type="text" value={editContent.general.tagline} onChange={e => updateNested('general', 'tagline', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-amber-500"/>
+                        </label>
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Brand Color (HEX)</span>
+                            <div className="flex gap-3">
+                                <input type="text" value={editContent.general.accentColor} onChange={e => updateNested('general', 'accentColor', e.target.value)} className="w-32 border border-slate-200 rounded-lg p-3 font-mono uppercase"/>
+                                <div className="w-12 h-12 rounded-lg border shadow-inner" style={{backgroundColor: editContent.general.accentColor}}></div>
+                            </div>
+                        </label>
                     </div>
-                    <div className="group">
-                        <label className="block text-slate-500 text-xs font-black uppercase tracking-widest mb-3 group-focus-within:text-amber-600 transition-colors">Brand Accent Color</label>
-                        <div className="flex gap-4">
-                            <input type="text" value={editContent.general.accentColor} onChange={e => updateNested('general', 'accentColor', e.target.value)} className="flex-1 border-2 border-slate-100 rounded-xl p-4 font-mono shadow-sm"/>
-                            <div className="w-16 h-16 rounded-2xl border-4 border-white shadow-2xl transition-transform hover:scale-110" style={{backgroundColor: editContent.general.accentColor}}></div>
+                </div>
+            )}
+
+            {activeTab === 'home' && (
+                <div className="space-y-6 animate-fade-in-up">
+                    <h2 className="text-2xl font-serif font-bold border-b pb-4">Home Hero Section</h2>
+                    <div className="grid gap-6">
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Main Title</span>
+                            <input type="text" value={editContent.home.heroTitle} onChange={e => updateNested('home', 'heroTitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3"/>
+                        </label>
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Hero Subtitle</span>
+                            <textarea value={editContent.home.heroSubtitle} onChange={e => updateNested('home', 'heroSubtitle', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-24"/>
+                        </label>
+                        <div className="bg-amber-50 p-6 rounded-xl border border-amber-200">
+                            <h3 className="font-bold text-amber-900 mb-4">Firm Announcement Bar</h3>
+                            <div className="flex items-center gap-4 mb-4">
+                                <span className="text-sm font-medium">Enabled:</span>
+                                <input type="checkbox" checked={editContent.home.announcement?.enabled} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, enabled: e.target.checked })} className="w-5 h-5 accent-amber-600 cursor-pointer"/>
+                            </div>
+                            <input type="text" placeholder="Announcement text..." value={editContent.home.announcement?.text} onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, text: e.target.value })} className="w-full border border-amber-200 rounded-lg p-3 bg-white"/>
                         </div>
                     </div>
                 </div>
-              </div>
+            )}
+
+            {activeTab === 'about' && (
+                <div className="space-y-6 animate-fade-in-up">
+                    <h2 className="text-2xl font-serif font-bold border-b pb-4">About the Founder</h2>
+                    <div className="grid gap-6">
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Qualifications</span>
+                            <input type="text" value={editContent.about.founder.qualifications} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, qualifications: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3"/>
+                        </label>
+                        <label className="block">
+                            <span className="text-slate-500 text-xs font-bold uppercase mb-2 block">Founder's Detailed Bio</span>
+                            <textarea value={editContent.about.founder.bio} onChange={e => setEditContent(prev => ({...prev, about: {...prev.about, founder: {...prev.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-64 text-sm leading-relaxed"/>
+                        </label>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === 'services' && (
+                <div className="space-y-6 animate-fade-in-up">
+                    <h2 className="text-2xl font-serif font-bold border-b pb-4">Practice Areas</h2>
+                    <div className="grid gap-6">
+                        {editContent.services.map((service) => (
+                            <div key={service.id} className="p-4 border border-slate-100 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                <div className="flex gap-4">
+                                    <div className="flex-1 space-y-3">
+                                        <input type="text" value={service.title} onChange={e => updateService(service.id, 'title', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-1 focus:border-amber-500 outline-none"/>
+                                        <textarea value={service.description} onChange={e => updateService(service.id, 'description', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-20 outline-none"/>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
 
             {activeTab === 'security' && (
                 <div className="space-y-10 animate-fade-in-up">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-6">
-                        <h2 className="text-3xl font-serif font-bold text-slate-900">Security Shield</h2>
-                        <ShieldCheck className="text-slate-300" size={32} />
-                    </div>
-                    
-                    <div className="grid gap-8 max-w-3xl">
-                        {/* Master Lock Section */}
-                        <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-8 rounded-2xl shadow-xl shadow-amber-500/20 text-white">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="bg-white/20 p-2.5 rounded-lg"><Key size={24} /></div>
-                                <div>
-                                    <h3 className="font-bold text-lg">Firebase Database Key</h3>
-                                    <p className="text-white/70 text-xs font-medium">This must match your Firebase Rule "SomeRandomWord123"</p>
-                                </div>
-                            </div>
-                            <input 
-                                type="text" 
-                                value={masterLock} 
-                                onChange={e => setMasterLock(e.target.value)} 
-                                className="w-full border-2 border-white/20 bg-white/10 rounded-xl p-4 text-white placeholder:text-white/40 focus:bg-white/20 outline-none font-mono text-xl tracking-wider transition-all"
-                                placeholder="Enter Secret Word"
-                            />
+                    <h2 className="text-2xl font-serif font-bold text-red-600 border-b border-red-100 pb-4">Security Shield</h2>
+                    <div className="grid gap-8">
+                        <div className="bg-amber-600 p-8 rounded-2xl text-white shadow-xl">
+                            <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Key size={20}/> Database Secret</h3>
+                            <p className="text-amber-100 text-xs mb-4">Must match Firebase Rules (SomeRandomWord123)</p>
+                            <input type="text" value={masterLock} onChange={e => setMasterLock(e.target.value)} className="w-full border-2 border-white/20 bg-white/10 rounded-xl p-4 text-white font-mono outline-none focus:bg-white/20"/>
                         </div>
-
-                        {/* Login Credentials */}
-                        <div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-100 shadow-inner">
-                            <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                                <ShieldCheck className="text-amber-500" size={20} />
-                                Access Credentials
-                            </h3>
+                        <div className="bg-slate-50 p-8 rounded-2xl border-2 border-slate-100">
+                            <h3 className="font-bold text-slate-800 mb-6">Login Credentials</h3>
                             <div className="grid md:grid-cols-2 gap-6">
-                                <div>
-                                    <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Username</label>
-                                    <input type="text" value={adminCreds.username} onChange={e => setAdminCreds(prev => ({...prev, username: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3.5 bg-white shadow-sm focus:border-amber-500 transition-all outline-none font-medium"/>
-                                </div>
-                                <div>
-                                    <label className="block text-slate-400 text-[10px] font-black uppercase mb-2">Password</label>
+                                <label className="block">
+                                    <span className="text-slate-400 text-[10px] font-black uppercase mb-2 block">Username</span>
+                                    <input type="text" value={adminCreds.username} onChange={e => setAdminCreds(prev => ({...prev, username: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white"/>
+                                </label>
+                                <label className="block">
+                                    <span className="text-slate-400 text-[10px] font-black uppercase mb-2 block">Password</span>
                                     <div className="relative">
-                                        <input type={showPassword ? "text" : "password"} value={adminCreds.password} onChange={e => setAdminCreds(prev => ({...prev, password: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3.5 bg-white shadow-sm focus:border-amber-500 transition-all outline-none font-medium pr-12"/>
-                                        <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-4 flex items-center text-slate-400 hover:text-slate-900 transition-colors">
-                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                        </button>
+                                        <input type={showPassword ? "text" : "password"} value={adminCreds.password} onChange={e => setAdminCreds(prev => ({...prev, password: e.target.value}))} className="w-full border border-slate-200 rounded-xl p-3 bg-white pr-12"/>
+                                        <button onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 px-4 text-slate-400">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                                     </div>
-                                </div>
+                                </label>
                             </div>
-                            <p className="mt-6 text-[11px] text-slate-400 italic">Changing these will update your login for the next time you sign in.</p>
                         </div>
                     </div>
                 </div>
             )}
-          </div>
         </div>
       </div>
     </div>
