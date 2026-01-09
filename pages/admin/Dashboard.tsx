@@ -63,10 +63,7 @@ const Dashboard: React.FC = () => {
   const handleSave = async () => {
     setSavingStatus('saving');
     try {
-        // Step 1: Save core site content (usually allowed by rules)
         await updateContent(editContent);
-        
-        // Step 2: Save security settings (might fail if rules are restricted)
         if (isFirebaseConnected) {
             try {
                 const adminRef = getDbRef('admin_credentials');
@@ -74,15 +71,14 @@ const Dashboard: React.FC = () => {
                 if (lockRef) await set(lockRef, masterLock);
                 if (adminRef) await set(adminRef, adminCreds);
             } catch (securityErr) {
-                console.warn("Security settings (lock/creds) could not be synced to cloud due to database permissions, but site content was saved.", securityErr);
+                console.warn("Security sync restricted by database permissions.", securityErr);
             }
         }
-        
         setSavingStatus('success');
         setTimeout(() => setSavingStatus('idle'), 3000);
     } catch (e: any) {
         console.error("Critical Save Error:", e);
-        alert(`Save Failed: ${e.message || 'Check your internet connection or database permissions.'}`);
+        alert(`Save Failed: ${e.message || 'Check connection.'}`);
         setSavingStatus('idle');
     }
   };
@@ -91,6 +87,19 @@ const Dashboard: React.FC = () => {
     setEditContent(prev => ({
       ...prev,
       [section]: { ...(prev[section as keyof typeof prev] as any), [key]: value }
+    }));
+  };
+
+  const updateFounderField = (field: string, value: any) => {
+    setEditContent(prev => ({
+      ...prev,
+      about: {
+        ...prev.about,
+        founder: {
+          ...prev.about.founder,
+          [field]: value
+        }
+      }
     }));
   };
 
@@ -232,14 +241,23 @@ const Dashboard: React.FC = () => {
                                         <><ImageIcon className="text-slate-300 mb-2" size={32}/><span className="text-[10px] text-slate-400 font-bold uppercase">No Profile Photo</span></>
                                     )}
                                 </div>
-                                <input type="text" placeholder="Founder Photo URL" value={editContent.about.founder.image || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, image: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono"/>
+                                <label className="block">
+                                    <span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Profile Picture URL</span>
+                                    <input 
+                                        type="text" 
+                                        placeholder="Paste image link here" 
+                                        value={editContent.about.founder.image || ''} 
+                                        onChange={e => updateFounderField('image', e.target.value)} 
+                                        className="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono"
+                                    />
+                                </label>
                             </div>
                             <div className="md:col-span-2 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Full Name</span><input type="text" value={editContent.about.founder.name || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, name: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 font-bold"/></label>
-                                    <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Qualifications</span><input type="text" value={editContent.about.founder.qualifications || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, qualifications: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3"/></label>
+                                    <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Full Name</span><input type="text" value={editContent.about.founder.name || ''} onChange={e => updateFounderField('name', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 font-bold"/></label>
+                                    <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Qualifications</span><input type="text" value={editContent.about.founder.qualifications || ''} onChange={e => updateFounderField('qualifications', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3"/></label>
                                 </div>
-                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Bio</span><textarea value={editContent.about.founder.bio || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
+                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Detailed Bio</span><textarea value={editContent.about.founder.bio || ''} onChange={e => updateFounderField('bio', e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
                             </div>
                         </div>
                     </div>

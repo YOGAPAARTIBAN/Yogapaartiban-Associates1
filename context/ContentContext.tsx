@@ -76,7 +76,16 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
                    announcement: { ...INITIAL_CONTENT.home.announcement, ...(prev.home?.announcement || {}), ...(data.home?.announcement || {}) },
                    maintenance: { ...INITIAL_CONTENT.home.maintenance, ...(prev.home?.maintenance || {}), ...(data.home?.maintenance || {}) }
                  },
-                 about: { ...INITIAL_CONTENT.about, ...prev.about, ...data.about },
+                 about: { 
+                   ...INITIAL_CONTENT.about, 
+                   ...prev.about, 
+                   ...data.about,
+                   founder: { 
+                     ...INITIAL_CONTENT.about.founder, 
+                     ...(prev.about?.founder || {}), 
+                     ...(data.about?.founder || {}) 
+                   }
+                 },
                  disclaimer: { ...INITIAL_CONTENT.disclaimer, ...prev.disclaimer, ...data.disclaimer }
              };
              try { localStorage.setItem('site_content_v1', JSON.stringify(merged)); } catch(e) {}
