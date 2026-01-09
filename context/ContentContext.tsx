@@ -16,7 +16,7 @@ const PERMANENT_FIREBASE_CONFIG = {
 
 interface ContentContextType {
   content: SiteContent;
-  updateContent: (newContent: Partial<SiteContent>) => void;
+  updateContent: (newContent: SiteContent) => Promise<void>;
   resetContent: () => void;
   isFirebaseConnected: boolean;
   connectionSource: 'hardcoded' | 'local' | 'none';
@@ -36,14 +36,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       const savedContent = localStorage.getItem('site_content_v1');
       if (savedContent) {
         const parsed = JSON.parse(savedContent);
-        return { 
-            ...INITIAL_CONTENT, 
-            ...parsed,
-            general: { ...INITIAL_CONTENT.general, ...parsed.general },
-            home: { ...INITIAL_CONTENT.home, ...parsed.home },
-            about: { ...INITIAL_CONTENT.about, ...parsed.about },
-            disclaimer: { ...INITIAL_CONTENT.disclaimer, ...parsed.disclaimer }
-        };
+        return { ...INITIAL_CONTENT, ...parsed };
       }
     } catch (error) {
       console.error("Failed to load content from storage", error);
@@ -56,13 +49,6 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
         connectToDatabase(PERMANENT_FIREBASE_CONFIG, 'hardcoded');
         return;
     }
-    const storedConfig = localStorage.getItem('firebase_config');
-    if (storedConfig) {
-      try {
-        const config = JSON.parse(storedConfig);
-        connectToDatabase(config, 'local');
-      } catch (e) {}
-    }
   }, []);
 
   const connectToDatabase = async (config: any, source: 'hardcoded' | 'local' = 'local') => {
@@ -73,20 +59,25 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       setIsFirebaseConnected(true);
       setConnectionSource(source);
 
-      if (source === 'local') localStorage.setItem('firebase_config', JSON.stringify(config));
-
       const contentRef = ref(database, 'site_content');
       onValue(contentRef, (snapshot) => {
         const data = snapshot.val();
         if (data) {
           setContent((prev) => {
              const merged = { 
+                 ...INITIAL_CONTENT,
                  ...prev, 
                  ...data,
-                 general: { ...prev.general, ...data.general },
-                 home: { ...prev.home, ...data.home },
-                 about: { ...prev.about, ...data.about },
-                 disclaimer: { ...prev.disclaimer, ...data.disclaimer }
+                 general: { ...INITIAL_CONTENT.general, ...prev.general, ...data.general },
+                 home: { 
+                   ...INITIAL_CONTENT.home, 
+                   ...prev.home, 
+                   ...data.home,
+                   announcement: { ...INITIAL_CONTENT.home.announcement, ...(prev.home?.announcement || {}), ...(data.home?.announcement || {}) },
+                   maintenance: { ...INITIAL_CONTENT.home.maintenance, ...(prev.home?.maintenance || {}), ...(data.home?.maintenance || {}) }
+                 },
+                 about: { ...INITIAL_CONTENT.about, ...prev.about, ...data.about },
+                 disclaimer: { ...INITIAL_CONTENT.disclaimer, ...prev.disclaimer, ...data.disclaimer }
              };
              try { localStorage.setItem('site_content_v1', JSON.stringify(merged)); } catch(e) {}
              return merged;
@@ -95,7 +86,6 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       });
       return true;
     } catch (error: any) {
-      console.error("Firebase Connection Error", error);
       return false;
     }
   };
@@ -105,12 +95,11 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
       return ref(db, path);
   };
 
-  const updateContent = (newContent: Partial<SiteContent>) => {
-    const updated = { ...content, ...newContent };
-    setContent(updated);
-    try { localStorage.setItem('site_content_v1', JSON.stringify(updated)); } catch (e) {}
+  const updateContent = async (newContent: SiteContent) => {
+    setContent(newContent);
+    try { localStorage.setItem('site_content_v1', JSON.stringify(newContent)); } catch (e) {}
     if (isFirebaseConnected && db) {
-        set(ref(db, 'site_content'), updated).catch(err => console.error("Firebase write failed", err));
+        return set(ref(db, 'site_content'), newContent);
     }
   };
 

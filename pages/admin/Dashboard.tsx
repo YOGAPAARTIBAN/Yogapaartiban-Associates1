@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { set, get } from 'firebase/database';
 import { INITIAL_ADMIN_CREDENTIALS, INITIAL_CONTENT } from '../../constants';
-import { TeamMember, Service } from '../../types';
 
 const Dashboard: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
@@ -27,12 +26,16 @@ const Dashboard: React.FC = () => {
   // Initialization & Sync
   useEffect(() => {
     if (content) {
-      // Deep merge with defaults to prevent UI gaps
       setEditContent({
         ...INITIAL_CONTENT,
         ...content,
         general: { ...INITIAL_CONTENT.general, ...(content.general || {}) },
-        home: { ...INITIAL_CONTENT.home, ...(content.home || {}) },
+        home: { 
+          ...INITIAL_CONTENT.home, 
+          ...(content.home || {}),
+          announcement: { ...INITIAL_CONTENT.home.announcement, ...(content.home?.announcement || {}) },
+          maintenance: { ...INITIAL_CONTENT.home.maintenance, ...(content.home?.maintenance || {}) }
+        },
         about: { 
           ...INITIAL_CONTENT.about, 
           ...(content.about || {}),
@@ -49,29 +52,37 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (isFirebaseConnected) {
         const adminRef = getDbRef('admin_credentials');
-        if (adminRef) get(adminRef).then(snap => snap.exists() && setAdminCreds(snap.val()));
+        if (adminRef) get(adminRef).then(snap => snap.exists() && setAdminCreds(snap.val())).catch(() => {});
         const lockRef = getDbRef('master_lock');
-        if (lockRef) get(lockRef).then(snap => snap.exists() && setMasterLock(snap.val()));
+        if (lockRef) get(lockRef).then(snap => snap.exists() && setMasterLock(snap.val())).catch(() => {});
     }
   }, [isFirebaseConnected, getDbRef]);
 
   if (!isAuthenticated) { navigate('/official-login'); return null; }
 
-  // Actions
   const handleSave = async () => {
     setSavingStatus('saving');
     try {
+        // Step 1: Save core site content (usually allowed by rules)
         await updateContent(editContent);
+        
+        // Step 2: Save security settings (might fail if rules are restricted)
         if (isFirebaseConnected) {
-            const adminRef = getDbRef('admin_credentials');
-            const lockRef = getDbRef('master_lock');
-            if (lockRef) await set(lockRef, masterLock);
-            if (adminRef) await set(adminRef, adminCreds);
+            try {
+                const adminRef = getDbRef('admin_credentials');
+                const lockRef = getDbRef('master_lock');
+                if (lockRef) await set(lockRef, masterLock);
+                if (adminRef) await set(adminRef, adminCreds);
+            } catch (securityErr) {
+                console.warn("Security settings (lock/creds) could not be synced to cloud due to database permissions, but site content was saved.", securityErr);
+            }
         }
+        
         setSavingStatus('success');
         setTimeout(() => setSavingStatus('idle'), 3000);
-    } catch (e) {
-        alert('Save Failed!');
+    } catch (e: any) {
+        console.error("Critical Save Error:", e);
+        alert(`Save Failed: ${e.message || 'Check your internet connection or database permissions.'}`);
         setSavingStatus('idle');
     }
   };
@@ -198,7 +209,7 @@ const Dashboard: React.FC = () => {
                               placeholder="Type announcement message here..." 
                               value={editContent.home.announcement?.text || ''} 
                               onChange={e => updateNested('home', 'announcement', { ...editContent.home.announcement, text: e.target.value })} 
-                              className="w-full border border-slate-700 rounded-lg p-3 bg-slate-800 text-white h-20 outline-none focus:ring-1 focus:ring-amber-500"
+                              className="w-full border border-slate-700 rounded-lg p-3 bg-slate-800 text-white h-24 outline-none focus:ring-1 focus:ring-amber-500"
                             />
                         </div>
                     </div>
@@ -208,7 +219,6 @@ const Dashboard: React.FC = () => {
             {/* TAB: ABOUT / TEAM */}
             {activeTab === 'about' && (
                 <div className="space-y-8 animate-fade-in-up">
-                    {/* Founder Card */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
                             <div className="flex items-center gap-3"><User /> <h2 className="font-serif font-bold text-xl">Founder Profile</h2></div>
@@ -229,15 +239,14 @@ const Dashboard: React.FC = () => {
                                     <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Full Name</span><input type="text" value={editContent.about.founder.name || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, name: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 font-bold"/></label>
                                     <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Qualifications</span><input type="text" value={editContent.about.founder.qualifications || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, qualifications: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3"/></label>
                                 </div>
-                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Detailed Founder Bio (Supports Multiple Paragraphs)</span><textarea value={editContent.about.founder.bio || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
+                                <label className="block"><span className="text-slate-400 text-[10px] font-black uppercase mb-1 block">Bio</span><textarea value={editContent.about.founder.bio || ''} onChange={e => setEditContent(p => ({...p, about: {...p.about, founder: {...p.about.founder, bio: e.target.value}}}))} className="w-full border border-slate-200 rounded-lg p-3 h-48 text-sm leading-relaxed"/></label>
                             </div>
                         </div>
                     </div>
 
-                    {/* Executives List */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-                            <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Executive Advocates</h2></div>
+                            <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Advocates</h2></div>
                             <button onClick={() => addItem('executives')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add Advocate</button>
                         </div>
                         <div className="p-8 space-y-6">
@@ -254,11 +263,10 @@ const Dashboard: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* CA List */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                             <div className="flex items-center gap-3"><Users className="text-slate-400" /> <h2 className="font-serif font-bold text-xl">Chartered Accountants</h2></div>
-                            <button onClick={() => addItem('cas')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add Auditor</button>
+                            <button onClick={() => addItem('cas')} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition-all"><Plus size={14}/> Add CA</button>
                         </div>
                         <div className="p-8 grid md:grid-cols-2 gap-6">
                             {editContent.about.cas.map((ca) => (
