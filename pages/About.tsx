@@ -50,11 +50,20 @@ const About: React.FC = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {executives.map((exec) => (
-              <div key={exec.id} className="bg-slate-50 p-8 rounded hover:bg-white hover:shadow-lg transition-all border border-gray-100">
-                <h4 className="text-xl font-bold text-slate-900 mb-1">{exec.name}</h4>
-                <p className="text-sm text-slate-500 mb-4 font-mono">{exec.qualifications}</p>
-                <div className="w-12 h-1 bg-amber-500 mb-4"></div>
-                <p className="text-gray-600 text-sm leading-relaxed">{exec.bio}</p>
+              <div key={exec.id} className="bg-white p-0 rounded-xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl transition-all group">
+                <div className="aspect-[3/4] bg-slate-100 relative overflow-hidden">
+                   {exec.image ? (
+                     <img src={exec.image} alt={exec.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center text-slate-300">No Photo</div>
+                   )}
+                </div>
+                <div className="p-6">
+                  <h4 className="text-xl font-bold text-slate-900 mb-1">{exec.name}</h4>
+                  <p className="text-xs text-amber-600 font-bold uppercase tracking-widest mb-3">{exec.role}</p>
+                  <p className="text-xs text-slate-400 mb-4 font-mono">{exec.qualifications}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed line-clamp-4">{exec.bio}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -68,10 +77,15 @@ const About: React.FC = () => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
              {cas.map((ca) => (
-               <div key={ca.id} className="bg-white border border-gray-200 p-8 rounded shadow-sm">
-                 <h4 className="text-xl font-bold text-slate-900 mb-2">{ca.name}</h4>
-                 <p className="text-amber-600 text-sm font-bold uppercase mb-4">Connected Auditor</p>
-                 <p className="text-gray-600 leading-relaxed">{ca.bio}</p>
+               <div key={ca.id} className="bg-white border border-gray-200 p-8 rounded-xl shadow-sm flex flex-col md:flex-row gap-6">
+                 <div className="w-24 h-24 rounded-lg bg-slate-50 shrink-0 overflow-hidden border border-slate-100">
+                    {ca.image ? <img src={ca.image} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-[10px] text-slate-300 text-center p-2 uppercase font-bold">No Image</div>}
+                 </div>
+                 <div>
+                   <h4 className="text-xl font-bold text-slate-900 mb-2">{ca.name}</h4>
+                   <p className="text-amber-600 text-xs font-bold uppercase mb-4 tracking-widest">Connected Auditor</p>
+                   <p className="text-gray-600 text-sm leading-relaxed">{ca.bio}</p>
+                 </div>
                </div>
              ))}
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useContent } from '../../context/ContentContext';
 import { useNavigate } from 'react-router-dom';
@@ -6,7 +6,7 @@ import {
   Save, LogOut, ShieldCheck, Eye, EyeOff, Key, Wifi, WifiOff, 
   RefreshCw, CheckCircle2, Home as HomeIcon, Info, Briefcase, 
   Settings, AlertTriangle, User, Users, Plus, Trash2, 
-  Video, Phone, Mail, MapPin, Image as ImageIcon, AlertCircle, Bell
+  Video, Phone, Mail, MapPin, Image as ImageIcon, AlertCircle, Bell, Upload, X
 } from 'lucide-react';
 import { set, get } from 'firebase/database';
 import { INITIAL_ADMIN_CREDENTIALS, INITIAL_CONTENT } from '../../constants';
@@ -25,7 +25,6 @@ const Dashboard: React.FC = () => {
   
   const [isDirty, setIsDirty] = useState(false);
 
-  // Deep clone and sync local state with global context content
   useEffect(() => {
     if (content && !isDirty) {
       setEditContent(JSON.parse(JSON.stringify({
@@ -88,6 +87,15 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const handleImageUpload = (file: File, callback: (base64: string) => void) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      callback(reader.result as string);
+      setIsDirty(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const updateNested = (section: string, key: string, value: any) => {
     setIsDirty(true);
     setEditContent(prev => ({
@@ -115,11 +123,11 @@ const Dashboard: React.FC = () => {
     setEditContent(prev => {
       const newState = JSON.parse(JSON.stringify(prev));
       if (path === 'services') {
-        newState.services = prev.services.map(s => s.id === id ? { ...s, [field]: value } : s);
+        newState.services = prev.services.map((s: any) => s.id === id ? { ...s, [field]: value } : s);
       } else if (path === 'about.executives') {
-        newState.about.executives = prev.about.executives.map(e => e.id === id ? { ...e, [field]: value } : e);
+        newState.about.executives = prev.about.executives.map((e: any) => e.id === id ? { ...e, [field]: value } : e);
       } else if (path === 'about.cas') {
-        newState.about.cas = prev.about.cas.map(c => c.id === id ? { ...c, [field]: value } : c);
+        newState.about.cas = prev.about.cas.map((c: any) => c.id === id ? { ...c, [field]: value } : c);
       }
       return newState;
     });
@@ -131,16 +139,16 @@ const Dashboard: React.FC = () => {
     setEditContent(prev => {
       if (path === 'services') return { ...prev, services: [...prev.services, { id, title: 'New Service', description: '', iconName: 'Briefcase' }] };
       if (path === 'executives') return { ...prev, about: { ...prev.about, executives: [...prev.about.executives, { id, name: 'New Executive', role: 'Advocate', bio: '', image: '' }] } };
-      return { ...prev, about: { ...prev.about, cas: [...prev.about.cas, { id, name: 'New CA', role: 'Chartered Accountant', bio: '' }] } };
+      return { ...prev, about: { ...prev.about, cas: [...prev.about.cas, { id, name: 'New Auditor', role: 'Chartered Accountant', bio: '', image: '' }] } };
     });
   };
 
   const removeItem = (path: 'services' | 'executives' | 'cas', id: string) => {
     setIsDirty(true);
     setEditContent(prev => {
-      if (path === 'services') return { ...prev, services: prev.services.filter(s => s.id !== id) };
-      if (path === 'executives') return { ...prev, about: { ...prev.about, executives: prev.about.executives.filter(e => e.id !== id) } };
-      return { ...prev, about: { ...prev.about, cas: prev.about.cas.filter(c => c.id !== id) } };
+      if (path === 'services') return { ...prev, services: prev.services.filter((s: any) => s.id !== id) };
+      if (path === 'executives') return { ...prev, about: { ...prev.about, executives: prev.about.executives.filter((e: any) => e.id !== id) } };
+      return { ...prev, about: { ...prev.about, cas: prev.about.cas.filter((c: any) => c.id !== id) } };
     });
   };
 
@@ -241,27 +249,24 @@ const Dashboard: React.FC = () => {
                     {/* Founder Profile */}
                     <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
                         <div className="p-6 bg-slate-900 text-white flex items-center justify-between">
-                            <div className="flex items-center gap-3"><User /> <h2 className="font-serif font-bold text-xl">Founder Profile Picture & Bio</h2></div>
+                            <div className="flex items-center gap-3"><User /> <h2 className="font-serif font-bold text-xl">Founder Profile</h2></div>
                         </div>
                         <div className="p-8 grid md:grid-cols-3 gap-8">
                             <div className="space-y-4">
-                                <div className="aspect-[3/4] rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+                                <div className="group relative aspect-[3/4] rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center p-4 text-center overflow-hidden transition-all hover:bg-slate-200 cursor-pointer" onClick={() => document.getElementById('founder-upload')?.click()}>
                                     {editContent.about.founder.image ? (
-                                        <img src={editContent.about.founder.image} className="w-full h-full object-cover rounded-lg" alt="Founder Preview"/>
+                                        <img src={editContent.about.founder.image} className="absolute inset-0 w-full h-full object-cover" alt="Founder"/>
                                     ) : (
-                                        <><ImageIcon className="text-slate-300 mb-2" size={32}/><span className="text-[10px] text-slate-400 font-bold uppercase">No Profile Photo</span></>
+                                        <><ImageIcon className="text-slate-300 mb-2" size={32}/><span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Tap to Upload</span></>
                                     )}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                       <Upload className="text-white" />
+                                    </div>
+                                    <input id="founder-upload" type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], base64 => updateFounderField('image', base64))} />
                                 </div>
-                                <div className="space-y-1">
-                                    <span className="text-slate-400 text-[10px] font-black uppercase block">Founder Image URL</span>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Paste image link here" 
-                                        value={editContent.about.founder.image || ''} 
-                                        onChange={e => updateFounderField('image', e.target.value)} 
-                                        className="w-full border border-slate-200 rounded-lg p-3 text-xs font-mono focus:ring-1 focus:ring-amber-500 outline-none"
-                                    />
-                                    <p className="text-[9px] text-slate-400 italic">Required for "About" section display.</p>
+                                <div className="flex gap-2">
+                                  <button onClick={() => document.getElementById('founder-upload')?.click()} className="flex-1 bg-slate-900 text-white py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-slate-800">Change Photo</button>
+                                  {editContent.about.founder.image && <button onClick={() => updateFounderField('image', '')} className="p-2 bg-red-100 text-red-600 rounded hover:bg-red-200"><X size={16}/></button>}
                                 </div>
                             </div>
                             <div className="md:col-span-2 space-y-4">
@@ -283,13 +288,15 @@ const Dashboard: React.FC = () => {
                         <div className="p-8 space-y-8">
                             {editContent.about.executives.map((exec) => (
                                 <div key={exec.id} className="p-6 border border-slate-100 rounded-2xl bg-slate-50/50 relative group">
-                                    <button onClick={() => removeItem('executives', exec.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={18}/></button>
+                                    <button onClick={() => removeItem('executives', exec.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 z-10"><Trash2 size={18}/></button>
                                     <div className="grid md:grid-cols-4 gap-6">
-                                        <div className="space-y-2">
-                                           <div className="aspect-[3/4] bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden">
+                                        <div className="space-y-3">
+                                           <div className="group relative aspect-[3/4] bg-white rounded-lg border border-slate-200 flex items-center justify-center overflow-hidden cursor-pointer hover:bg-slate-50" onClick={() => document.getElementById(`exec-upload-${exec.id}`)?.click()}>
                                                {exec.image ? <img src={exec.image} className="w-full h-full object-cover" /> : <ImageIcon size={24} className="text-slate-200"/>}
+                                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Upload className="text-white" size={20}/></div>
                                            </div>
-                                           <input type="text" placeholder="Photo URL" value={exec.image || ''} onChange={e => updateArrayItem('about.executives', exec.id, 'image', e.target.value)} className="w-full text-[10px] border border-slate-200 rounded p-1.5 bg-white"/>
+                                           <input id={`exec-upload-${exec.id}`} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], base64 => updateArrayItem('about.executives', exec.id, 'image', base64))} />
+                                           <button onClick={() => document.getElementById(`exec-upload-${exec.id}`)?.click()} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold py-1.5 rounded uppercase tracking-wider">Change Photo</button>
                                         </div>
                                         <div className="md:col-span-3 space-y-4">
                                             <div className="grid md:grid-cols-2 gap-4">
@@ -314,7 +321,17 @@ const Dashboard: React.FC = () => {
                             {editContent.about.cas.map((ca) => (
                                 <div key={ca.id} className="p-6 border border-slate-100 rounded-2xl bg-slate-50/50 relative group">
                                     <button onClick={() => removeItem('cas', ca.id)} className="absolute top-4 right-4 p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={16}/></button>
-                                    <input type="text" placeholder="CA Name" value={ca.name || ''} onChange={e => updateArrayItem('about.cas', ca.id, 'name', e.target.value)} className="w-full font-bold mb-2 border-b border-slate-200 bg-transparent py-2 outline-none"/>
+                                    <div className="flex gap-4 mb-4">
+                                       <div className="group relative w-20 h-20 rounded-lg bg-white border border-slate-200 flex items-center justify-center overflow-hidden cursor-pointer" onClick={() => document.getElementById(`ca-upload-${ca.id}`)?.click()}>
+                                          {ca.image ? <img src={ca.image} className="w-full h-full object-cover" /> : <ImageIcon size={20} className="text-slate-200"/>}
+                                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"><Upload className="text-white" size={16}/></div>
+                                       </div>
+                                       <input id={`ca-upload-${ca.id}`} type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0], base64 => updateArrayItem('about.cas', ca.id, 'image', base64))} />
+                                       <div className="flex-1">
+                                          <input type="text" placeholder="CA Name" value={ca.name || ''} onChange={e => updateArrayItem('about.cas', ca.id, 'name', e.target.value)} className="w-full font-bold border-b border-slate-200 bg-transparent py-2 outline-none"/>
+                                          <p className="text-[10px] text-slate-400 mt-1 uppercase">Click icon to upload photo</p>
+                                       </div>
+                                    </div>
                                     <textarea placeholder="Bio..." value={ca.bio || ''} onChange={e => updateArrayItem('about.cas', ca.id, 'bio', e.target.value)} className="w-full text-xs text-slate-600 bg-transparent h-20 outline-none resize-none"/>
                                 </div>
                             ))}
